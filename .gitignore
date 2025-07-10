@@ -1,0 +1,82 @@
+## Build artifacts
+bin/
+obj/
+out/
+*.log
+
+## User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## VS Code
+.vscode/
+
+## Rider
+.idea/
+*.sln.iml
+
+## OS-generated
+.DS_Store
+Thumbs.db
+
+## Packages
+*.nupkg
+*.snupkg
+*.nuspec
+*.psmdcp
+*.vsix
+
+## NuGet
+project.lock.json
+project.fragment.lock.json
+artifacts/
+packages/
+*.nuproj
+
+## Dotnet CLI
+*.deps.json
+*.runtimeconfig.json
+*.runtimeconfig.dev.json
+
+## Publish output
+publish/
+
+## ReSharper
+_ReSharper*/
+*.DotSettings.user
+
+## Rider / IntelliJ logs
+.idea/.idea.*
+.idea/.idea_modules/
+
+## Test results
+TestResults/
+*.coverage
+*.coveragexml
+*.testsettings
+*.vsmdi
+*.trx
+
+## Web
+wwwroot/node_modules/
+wwwroot/lib/
+node_modules/
+dist/
+bower_components/
+jspm_packages/
+
+## Temporary files
+*.tmp
+*.temp
+*.bak
+*.old
+*.orig
+
+## config
+appsettings.Development.json
+appsettings.Local.json
+*.env
+.env.*
+.envrc

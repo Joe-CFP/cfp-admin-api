@@ -1,0 +1,2 @@
+GET {{HOST}}/api/organisations
+Accept: application/json
