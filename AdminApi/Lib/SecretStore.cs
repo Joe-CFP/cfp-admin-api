@@ -23,7 +23,12 @@ public enum SecretName
     ProdStripe, TestStripe, ProdTnOpensearch, ProdBedrockUser, ProdMachineKey, ProdCoreOpensearch,
 }
 
-public class SecretStore
+public interface ISecretStore
+{
+    Secret this[SecretName name] { get; }
+}
+
+public class SecretStore : ISecretStore
 {
     private readonly Dictionary<SecretName, Secret> _secrets;
 
@@ -99,7 +104,8 @@ public class SecretStore
 
         GetSecretValueResponse response = await client.GetSecretValueAsync(request);
 
-        Secret? parsed = JsonSerializer.Deserialize<Secret>(response.SecretString);
+        JsonSerializerOptions options = new() { PropertyNameCaseInsensitive = true };
+        Secret? parsed = JsonSerializer.Deserialize<Secret>(response.SecretString, options);
         if (parsed == null)
             throw new Exception($"Failed to deserialize secret: {awsName}");
 
