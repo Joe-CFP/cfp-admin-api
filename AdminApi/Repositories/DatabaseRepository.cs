@@ -1,4 +1,5 @@
-﻿using AdminApi.Db;
+﻿using System.Diagnostics;
+using AdminApi.Db;
 using AdminApi.Entities;
 using AdminApi.Lib;
 
@@ -28,14 +29,25 @@ public class DatabaseRepository : IDatabaseRepository
     {
         await using MySqlConnection connection = new(ConnectionString);
 
-        string sql = BuildSelectSql(TableDefinitions.OrganisationTable);
+        Stopwatch stopwatch = Stopwatch.StartNew();
 
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        IEnumerable<Organisation> results = await connection.QueryAsync<Organisation>(sql);
-        sw.Stop();
-        Console.WriteLine($"SearchOrganisationsAsync took {sw.ElapsedMilliseconds} ms for All Organisations");
+        string orgSql = BuildSelectSql(TableDefinitions.OrganisationTable);
+        List<Organisation> organisations = (await connection.QueryAsync<Organisation>(orgSql)).ToList();
 
-        return results;
+        string memberSql = BuildSelectSql(TableDefinitions.MemberTable) + " WHERE orgguid IS NOT NULL";
+        List<Member> members = (await connection.QueryAsync<Member>(memberSql)).ToList();
+
+        Dictionary<string, List<Member>> membersByOrgGuid = members
+            .GroupBy(m => m.OrganisationGuid)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        foreach (Organisation org in organisations)
+            org.Members = membersByOrgGuid.TryGetValue(org.Guid, out var list) ? list : new List<Member>();
+
+        stopwatch.Stop();
+        Console.WriteLine($"GetAllOrganisationsAsync took {stopwatch.ElapsedMilliseconds} ms");
+
+        return organisations;
     }
 
     public async Task<IEnumerable<OrganisationSearchResult>> SearchOrganisationsAsync(string query, int limit = 10)
@@ -50,10 +62,10 @@ public class DatabaseRepository : IDatabaseRepository
                                LIMIT @limit
                            """;
 
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+        Stopwatch stopwatch = Stopwatch.StartNew();
         IEnumerable<OrganisationSearchResult> results = await connection.QueryAsync<OrganisationSearchResult>(sql, new { query, limit });
-        sw.Stop();
-        Console.WriteLine($"SearchOrganisationsAsync took {sw.ElapsedMilliseconds} ms for query: '{query}'");
+        stopwatch.Stop();
+        Console.WriteLine($"SearchOrganisationsAsync took {stopwatch.ElapsedMilliseconds} ms for query: '{query}'");
 
         return results;
     }

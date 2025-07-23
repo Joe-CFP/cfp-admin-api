@@ -1,3 +1,4 @@
+using AdminApi.Cache;
 using AdminApi.Lib;
 using AdminApi.Repositories;
 using AdminApi.Routing;
@@ -18,6 +19,7 @@ builder.Services.AddSingleton<ISecretStore>(_ => {
     return SecretStore.CreateAsync(secrets, configPath, region).GetAwaiter().GetResult();
 });
 builder.Services.AddScoped<IDatabaseRepository, DatabaseRepository>();
+builder.Services.AddSingleton<IOrganisationCache, OrganisationCache>();
 
 WebApplication app = builder.Build();
 

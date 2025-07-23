@@ -29,6 +29,36 @@ public static class TableDefinitions
         }
     };
 
+    public static readonly DbTable MemberTable = new()
+    {
+        Name = "Member",
+        DbName = "members",
+        Type = typeof(Member),
+        Fields = new List<DbField>
+        {
+            FieldFor<Member, int>(m => m.Id, "id", "Primary key", "int"),
+            FieldFor<Member, string>(m => m.Username, "username", "Username (Same as Email)", "varchar", 65),
+            FieldFor<Member, string>(m => m.Password, "password", "Hashed password", "varchar", 65),
+            FieldFor<Member, string>(m => m.Email, "email", "Email address", "varchar", 65),
+            FieldFor<Member, bool>(m => m.IsVerified, "verified", "Whether account is verified", "tinyint"),
+            FieldFor<Member, DateTime>(m => m.ModificationDate, "mod_timestamp", "Last modified timestamp", "datetime"),
+            FieldFor<Member, string>(m => m.FirstName, "firstname", "First name", "varchar", 45),
+            FieldFor<Member, string>(m => m.LastName, "lastname", "Last name", "varchar", 45),
+            FieldFor<Member, string>(m => m.Address, "address", "Postal address", "varchar", 200),
+            FieldFor<Member, string>(m => m.Postcode, "postcode", "Postal code", "varchar", 45),
+            FieldFor<Member, string>(m => m.RegisterCode, "registercode", "Registration verification code", "varchar", 100),
+            FieldFor<Member, string>(m => m.PasswordCode, "passwordcode", "Password reset code", "varchar", 100),
+            FieldFor<Member, string>(m => m.StripeCustomerId, "custid", "Stripe customer ID", "varchar", 100),
+            FieldFor<Member, string>(m => m.StripeSubscriptionId, "subid", "Stripe Subscription ID", "varchar", 100),
+            FieldFor<Member, string>(m => m.StripePlanIdLegacy, "planid", "Stripe Plan ID - No longer in use", "varchar", 100),
+            FieldFor<Member, DateTime>(m => m.LastLoginDate, "last_login", "Last login timestamp", "datetime"),
+            FieldFor<Member, DateTime>(m => m.LoginExpiryDate, "login_expiry", "Login expiry timestamp", "datetime"),
+            FieldFor<Member, string>(m => m.ReferralCode, "refercode", "Referral code", "varchar", 100),
+            FieldFor<Member, bool>(m => m.InRegister, "inregister", "???", "tinyint"),
+            FieldFor<Member, string>(m => m.OrganisationGuid, "orgguid", "Organisation", "varchar", 45)
+        }
+    };
+
     private static DbField FieldFor<T, TProp>(Expression<Func<T, TProp>> expr, 
         string fieldName, string description, string fieldType, int? maxLength = null)
     {

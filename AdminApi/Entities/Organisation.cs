@@ -16,6 +16,7 @@ public class Organisation
     public string DataResidency { get; set; }
     public bool HasBidEvaluationModel { get; set; }
     public bool HasClaudeModule { get; set; }
+    public List<Member> Members { get; set; }
 }
 
 public class OrganisationSearchResult
