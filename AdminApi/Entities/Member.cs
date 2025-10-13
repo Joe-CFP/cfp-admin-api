@@ -21,5 +21,15 @@ public class Member
     public DateTime LoginExpiryDate { get; set; }
     public string ReferralCode { get; set; }
     public bool InRegister { get; set; }
-    public string OrganisationGuid { get; set; }
+    public string? OrganisationGuid { get; set; }
+    public int? OrganisationId { get; set; }
+    public string? OrganisationName { get; set; }
+}
+
+public class MemberSearchResult
+{
+    public int Id { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public string Email { get; set; }
 }

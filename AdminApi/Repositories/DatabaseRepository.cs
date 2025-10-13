@@ -12,6 +12,8 @@ public interface IDatabaseRepository
 {
     Task<IEnumerable<Organisation>> GetAllOrganisationsAsync();
     Task<IEnumerable<OrganisationSearchResult>> SearchOrganisationsAsync(string query, int limit = 10);
+    Task<Member?> GetMemberByIdAsync(int id);
+    Task<IEnumerable<MemberSearchResult>> SearchMembersAsync(string query, int limit = 10);
 }
 
 public class DatabaseRepository : IDatabaseRepository
@@ -55,7 +57,7 @@ public class DatabaseRepository : IDatabaseRepository
         await using MySqlConnection connection = new(ConnectionString);
 
         const string sql = """
-                               SELECT orgid AS Id, orgname AS Name
+                           SELECT orgid AS Id, orgname AS Name
                                FROM kborgindex
                                WHERE LOCATE(@query, orgname) > 0
                                ORDER BY LOCATE(@query, orgname), orgname
@@ -63,16 +65,57 @@ public class DatabaseRepository : IDatabaseRepository
                            """;
 
         Stopwatch stopwatch = Stopwatch.StartNew();
-        IEnumerable<OrganisationSearchResult> results = await connection.QueryAsync<OrganisationSearchResult>(sql, new { query, limit });
+        IEnumerable<OrganisationSearchResult> results =
+            await connection.QueryAsync<OrganisationSearchResult>(sql, new { query, limit });
         stopwatch.Stop();
         Console.WriteLine($"SearchOrganisationsAsync took {stopwatch.ElapsedMilliseconds} ms for query: '{query}'");
 
         return results;
     }
 
-    private static string BuildSelectSql(DbTable table)
+    public async Task<Member?> GetMemberByIdAsync(int id)
     {
-        IEnumerable<string> fields = table.Fields.Select(f => $"{f.DbName} AS {f.Name}");
+        await using var connection = new MySqlConnection(ConnectionString);
+
+        var extras = new (string SqlExpr, string Alias)[] {
+            ("kborgindex.orgid",   "OrganisationId"),
+            ("kborgindex.orgname", "OrganisationName")
+        };
+
+        string sql =
+            BuildSelectSql(TableDefinitions.MemberTable, extras) +
+            " LEFT JOIN kborgindex ON kborgindex.orgguid = members.orgguid" +
+            " WHERE members.id = @id";
+
+        return await connection.QueryFirstOrDefaultAsync<Member>(sql, new { id });
+    }
+
+    public async Task<IEnumerable<MemberSearchResult>> SearchMembersAsync(string query, int limit = 10)
+    {
+        await using MySqlConnection connection = new(ConnectionString);
+
+        const string sql = """
+                           SELECT id AS Id, firstname AS FirstName, lastname AS LastName, email AS Email
+                               FROM members
+                               WHERE firstname LIKE @pattern OR lastname LIKE @pattern OR email LIKE @pattern
+                               ORDER BY LOCATE(@query, firstname), LOCATE(@query, lastname), LOCATE(@query, email), firstname
+                               LIMIT @limit
+                           """;
+
+        string pattern = $"%{query}%";
+
+        return await connection.QueryAsync<MemberSearchResult>(sql, new { query, pattern, limit });
+    }
+
+    private static string BuildSelectSql(
+        DbTable table,
+        IEnumerable<(string SqlExpr, string Alias)>? extras = null)
+    {
+        IEnumerable<string> fields = table.Fields.Select(f => $"{table.DbName}.{f.DbName} AS {f.Name}");
+
+        if (extras is not null)
+            fields = fields.Concat(extras.Select(e => $"{e.SqlExpr} AS {e.Alias}"));
+
         return $"SELECT {string.Join(", ", fields)} FROM {table.DbName}";
     }
 }
