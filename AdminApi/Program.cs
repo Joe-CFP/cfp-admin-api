@@ -18,8 +18,10 @@ builder.Services.AddSingleton<ISecretStore>(_ => {
     const string configPath = @"C:\release\secrets.config", region = "eu-west-2";
     return SecretStore.CreateAsync(secrets, configPath, region).GetAwaiter().GetResult();
 });
+
 builder.Services.AddScoped<IDatabaseRepository, DatabaseRepository>();
 builder.Services.AddSingleton<IOrganisationCache, OrganisationCache>();
+builder.Services.AddScoped<IDatabaseCommands, DatabaseCommands>();
 
 WebApplication app = builder.Build();
 

@@ -1,5 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System.Data;
+using System.Diagnostics;
 using AdminApi.Db;
+using AdminApi.DTO;
 using AdminApi.Entities;
 using AdminApi.Lib;
 
@@ -44,7 +46,7 @@ public class DatabaseRepository : IDatabaseRepository
             .ToDictionary(g => g.Key, g => g.ToList());
 
         foreach (Organisation org in organisations)
-            org.Members = membersByOrgGuid.TryGetValue(org.Guid, out var list) ? list : new List<Member>();
+            org.Members = membersByOrgGuid.TryGetValue(org.Guid, out List<Member>? list) ? list : new List<Member>();
 
         stopwatch.Stop();
         Console.WriteLine($"GetAllOrganisationsAsync took {stopwatch.ElapsedMilliseconds} ms");
@@ -73,21 +75,37 @@ public class DatabaseRepository : IDatabaseRepository
         return results;
     }
 
-    public async Task<Member?> GetMemberByIdAsync(int id)
+    public async Task<Member> GetMemberByIdAsync(int id)
     {
-        await using var connection = new MySqlConnection(ConnectionString);
+        await using MySqlConnection connection = new MySqlConnection(ConnectionString);
 
         var extras = new (string SqlExpr, string Alias)[] {
             ("kborgindex.orgid",   "OrganisationId"),
             ("kborgindex.orgname", "OrganisationName")
         };
 
-        string sql =
-            BuildSelectSql(TableDefinitions.MemberTable, extras) +
-            " LEFT JOIN kborgindex ON kborgindex.orgguid = members.orgguid" +
-            " WHERE members.id = @id";
+        string sql = BuildSelectSql(TableDefinitions.MemberTable, extras) +
+                     " LEFT JOIN kborgindex ON kborgindex.orgguid = members.orgguid" +
+                     " WHERE members.id = @id";
 
-        return await connection.QueryFirstOrDefaultAsync<Member>(sql, new { id });
+        MemberRecord? record = await connection.QueryFirstOrDefaultAsync<MemberRecord>(sql, new { id });
+        if(record==null) throw new DataException("Couldn't retrieve member record from database");
+        UserJourney journey = await GetUserJourneyByUsernameAsync(record.Username);
+        return record.ToMember(journey);
+    }
+
+    private async Task<UserJourney> GetUserJourneyByUsernameAsync(string username)
+    {
+        await using MySqlConnection connection = new(ConnectionString);
+
+        string sql = BuildSelectSql(TableDefinitions.UserJourneyTable) +
+                     " WHERE userjourney.username = @username";
+
+        UserJourneyRecord? record = await connection.QueryFirstOrDefaultAsync<UserJourneyRecord>(sql, new { username });
+        if (record == null)
+            throw new DataException($"Couldn't retrieve user journey for username: {username}");
+
+        return record.ToUserJourney();
     }
 
     public async Task<IEnumerable<MemberSearchResult>> SearchMembersAsync(string query, int limit = 10)
