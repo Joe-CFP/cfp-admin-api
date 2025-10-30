@@ -27,11 +27,23 @@ public class MemberRecord
     public int? OrganisationId { get; set; }
     public string? OrganisationName { get; set; }
 
-    public Member ToMember(UserJourney? journey = null)
+    private static readonly Dictionary<string, string> SubscriptionNameFromCode = new()
+    {
+        { "EURO", "Euro" },
+        { "STAN", "Legacy" },
+        { "PREM", "Pro" },
+        { "BASI", "Basic" }
+    };
+    
+    public Member ToMember(MemberOptions? memberOptions, UserJourney? userJourney, DateTime? estimatedRegistrationDate)
     {
         Member member = new();
         PropertyMapper.CopyMatchingProperties(this, member);
-        member.UserJourney = journey;
+        member.UserJourney = userJourney;
+        if(memberOptions!=null)
+            PropertyMapper.CopyMatchingProperties(memberOptions, member);
+        member.SubscriptionName = SubscriptionNameFromCode.GetValueOrDefault(member.SubscriptionCode, "Unknown");
+        member.RegistrationDate =  estimatedRegistrationDate;
         return member;
     }
 }

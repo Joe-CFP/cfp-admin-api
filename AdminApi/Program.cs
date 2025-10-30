@@ -2,6 +2,7 @@ using AdminApi.Cache;
 using AdminApi.Lib;
 using AdminApi.Repositories;
 using AdminApi.Routing;
+using static System.Text.Json.Serialization.JsonIgnoreCondition;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -11,7 +12,8 @@ builder.Services.AddCors(
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddControllers(SlugifyParameterTransformer.SlugifyControllerNames);
+builder.Services.AddControllers()
+    .AddJsonOptions(o => { o.JsonSerializerOptions.DefaultIgnoreCondition = WhenWritingNull; });
 
 builder.Services.AddSingleton<ISecretStore>(_ => {
     SecretName[] secrets = [SecretName.ProdDatabase, SecretName.ProdMachineKey];

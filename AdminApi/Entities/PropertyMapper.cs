@@ -4,6 +4,13 @@ namespace AdminApi.Entities;
 
 public static class PropertyMapper
 {
+    public static T CreateAndPopulate<T>(object source) where T : new()
+    {
+        T dto = new();
+        CopyMatchingProperties(source, dto);
+        return dto;
+    }
+    
     public static void CopyMatchingProperties<TSource, TDest>(TSource source, TDest dest)
     {
         var srcProps = typeof(TSource).GetProperties(BindingFlags.Public | BindingFlags.Instance);

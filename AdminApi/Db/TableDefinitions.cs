@@ -67,10 +67,10 @@ public static class TableDefinitions
         Type = typeof(UserJourneyRecord),
         Fields = new List<DbField>
         {
-            FieldFor<UserJourneyRecord, int>(u => u.UjId, "ujid", "Primary key", "int"),
+            FieldFor<UserJourneyRecord, int>(u => u.UserJourneyId, "ujid", "Primary key", "int"),
             FieldFor<UserJourneyRecord, string>(u => u.Username, "username", "Username", "varchar", 500),
-            FieldFor<UserJourneyRecord, string>(u => u.CurState, "curstate", "Current state", "varchar", 100),
-            FieldFor<UserJourneyRecord, DateTime>(u => u.CurStateDateTime, "curstatedatetime", "Current state datetime", "datetime"),
+            FieldFor<UserJourneyRecord, string>(u => u.CurrentState, "curstate", "Current state", "varchar", 100),
+            FieldFor<UserJourneyRecord, DateTime>(u => u.CurrentStateDateTime, "curstatedatetime", "Current state datetime", "datetime"),
             FieldFor<UserJourneyRecord, string>(u => u.AutoNextState, "autonextstate", "Next state", "varchar", 100),
             FieldFor<UserJourneyRecord, DateTime?>(u => u.AutoNextStateDateTime, "autonextstatedatetime", "Next state datetime", "datetime"),
             FieldFor<UserJourneyRecord, string>(u => u.Summary, "summary", "Summary", "varchar", 500),
@@ -98,6 +98,27 @@ public static class TableDefinitions
         }
     }; 
 
+    public static readonly DbTable MemberOptionsTable = new()
+    {
+        Name = "MemberOptions",
+        DbName = "memberoptions",
+        Type = typeof(MemberOptionsRecord),
+        Fields = new List<DbField>
+        {
+            FieldFor<MemberOptionsRecord, int>(m => m.MemberId, "id", "Primary key", "int"),
+            FieldFor<MemberOptionsRecord, string?>(m => m.SubscriptionCode, "subtype", "Subscription type", "varchar", 45),
+            FieldFor<MemberOptionsRecord, bool>(m => m.WeeklyEmail, "weeklyemail", "Weekly email enabled", "tinyint"),
+            FieldFor<MemberOptionsRecord, bool>(m => m.WeeklyCsv, "weeklycsv", "Weekly CSV enabled", "tinyint"),
+            FieldFor<MemberOptionsRecord, bool>(m => m.DailyEmail, "dailyemail", "Daily email enabled", "tinyint"),
+            FieldFor<MemberOptionsRecord, bool>(m => m.FlashEmail, "flashemail", "Flash email enabled", "tinyint"),
+            FieldFor<MemberOptionsRecord, string?>(m => m.Cc1, "cc1", "Additional email recipient 1", "varchar", 200),
+            FieldFor<MemberOptionsRecord, string?>(m => m.Cc2, "cc2", "Additional email recipient 2", "varchar", 200),
+            FieldFor<MemberOptionsRecord, string?>(m => m.Cc3, "cc3", "Additional email recipient 3", "varchar", 200),
+            FieldFor<MemberOptionsRecord, string?>(m => m.Cc4, "cc4", "Additional email recipient 4", "varchar", 200),
+            FieldFor<MemberOptionsRecord, string?>(m => m.LanguageList, "langlist", "Preferred language(s)", "varchar", 30)
+        }
+    };
+    
     private static DbField FieldFor<T, TProp>(Expression<Func<T, TProp>> expr,
         string fieldName, string description, string fieldType, int? maxLength = null)
     {
