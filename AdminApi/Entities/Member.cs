@@ -11,6 +11,7 @@ public class Member: MemberRecord
     public bool FlashEmail { get; set; }
     public bool WeeklyCsv { get; set; }
     public DateTime? RegistrationDate { get; set; }
+    public MemberActivity? Activity { get; set; }
 }
 
 public class MemberSearchResult

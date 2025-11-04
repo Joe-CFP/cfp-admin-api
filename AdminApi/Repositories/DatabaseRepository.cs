@@ -10,15 +10,7 @@ namespace AdminApi.Repositories;
 using Dapper;
 using MySql.Data.MySqlClient;
 
-public interface IDatabaseRepository
-{
-    Task<IEnumerable<Organisation>> GetAllOrganisationsAsync();
-    Task<IEnumerable<OrganisationSearchResult>> SearchOrganisationsAsync(string query, int limit = 10);
-    Task<Member?> GetMemberByIdAsync(int id);
-    Task<IEnumerable<MemberSearchResult>> SearchMembersAsync(string query, int limit = 10);
-}
-
-public class DatabaseRepository : IDatabaseRepository
+public partial class DatabaseRepository : IDatabaseRepository
 {
     private string ConnectionString { get; }
 
@@ -90,10 +82,13 @@ public class DatabaseRepository : IDatabaseRepository
 
         MemberRecord? record = await connection.QueryFirstOrDefaultAsync<MemberRecord>(sql, new { id });
         if(record==null) throw new DataException("Couldn't retrieve Member record from database");
+
         UserJourney journey = await GetUserJourneyByUsernameAsync(record.Username);
         MemberOptions options = await GetMemberOptionsByMemberIdAsync(record.Id);
         DateTime? estimatedRegistrationDate = await GetEarliestInteractionAsync(record.Id);
-        return record.ToMember(options, journey, estimatedRegistrationDate);
+        MemberActivity activity = await GetMemberActivityAsync(record.Id, record.Email);
+
+        return record.ToMember(options, journey, estimatedRegistrationDate, activity);
     }
 
     private async Task<UserJourney> GetUserJourneyByUsernameAsync(string username)

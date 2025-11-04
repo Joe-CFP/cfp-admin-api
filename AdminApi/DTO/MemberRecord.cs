@@ -35,7 +35,7 @@ public class MemberRecord
         { "BASI", "Basic" }
     };
     
-    public Member ToMember(MemberOptions? memberOptions, UserJourney? userJourney, DateTime? estimatedRegistrationDate)
+    public Member ToMember(MemberOptions? memberOptions, UserJourney? userJourney, DateTime? estimatedRegistrationDate, MemberActivity? activity)
     {
         Member member = new();
         PropertyMapper.CopyMatchingProperties(this, member);
@@ -43,7 +43,8 @@ public class MemberRecord
         if(memberOptions!=null)
             PropertyMapper.CopyMatchingProperties(memberOptions, member);
         member.SubscriptionName = SubscriptionNameFromCode.GetValueOrDefault(member.SubscriptionCode, "Unknown");
-        member.RegistrationDate =  estimatedRegistrationDate;
+        member.RegistrationDate = estimatedRegistrationDate;
+        member.Activity = activity;
         return member;
     }
 }

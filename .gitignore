@@ -16,6 +16,8 @@ out/
 ## Rider
 .idea/
 *.sln.iml
+*.csproj.DotSettings
+*.sln.DotSettings.user
 
 ## OS-generated
 .DS_Store
