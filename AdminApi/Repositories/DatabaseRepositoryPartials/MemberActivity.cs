@@ -6,6 +6,12 @@ namespace AdminApi.Repositories;
 
 public partial class DatabaseRepository
 {
+    private async Task<List<string>> GetStringDatesFromDatabase(MySqlConnection connection, string sql, object param)
+    {
+        var result = await connection.QueryAsync<DateTime>(sql, param);
+        return result.Select(d => d.ToString("yyyy-MM-dd")).ToList();
+    }
+
     private async Task<MemberActivity> GetMemberActivityAsync(int memberId, string email)
     {
         await using MySqlConnection connection = new(ConnectionString);
@@ -36,15 +42,29 @@ public partial class DatabaseRepository
                                 ORDER BY Day DESC
                                 """;
 
-        IEnumerable<DateTime> loginDays = await connection.QueryAsync<DateTime>(loginSql, new { memberId });
-        IEnumerable<DateTime> emailDays = await connection.QueryAsync<DateTime>(emailSql, new { email });
-        IEnumerable<DateTime> emailErrorDays = await connection.QueryAsync<DateTime>(errorSql, new { email });
+        const string ninjaSql = """
+                                SELECT DISTINCT DATE(c.createdate) AS Day
+                                FROM members m
+                                JOIN kborgindex o ON o.orgguid = m.orgguid
+                                JOIN tagptcosts c ON c.orgid = o.orgid
+                                WHERE m.id = @memberId
+                                  AND c.createdate >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
+                                ORDER BY Day DESC
+                                """;
+
+        List<string> loginDays = await GetStringDatesFromDatabase(connection, loginSql, new { memberId });
+        List<string> emailDays = await GetStringDatesFromDatabase(connection, emailSql, new { email });
+        List<string> emailErrorDays = await GetStringDatesFromDatabase(connection, errorSql, new { email });
+        List<string> ninjaDays = await GetStringDatesFromDatabase(connection, ninjaSql, new { memberId });
+
+        List<string> tenderNinjaDays = ninjaDays.Where(day => loginDays.Contains(day)).ToList();
 
         return new MemberActivity
         {
-            LoginDays = loginDays.Select(d => d.ToString("yyyy-MM-dd")).ToList(),
-            EmailDays = emailDays.Select(d => d.ToString("yyyy-MM-dd")).ToList(),
-            EmailErrorDays = emailErrorDays.Select(d => d.ToString("yyyy-MM-dd")).ToList()
+            LoginDays = loginDays,
+            EmailDays = emailDays,
+            EmailErrorDays = emailErrorDays,
+            TenderNinjaDays = tenderNinjaDays
         };
     }
 }

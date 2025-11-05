@@ -6,4 +6,5 @@ public class MemberActivity
     public List<string> LoginDays { get; set; } = new();
     public List<string> EmailDays { get; set; } = new();
     public List<string> EmailErrorDays { get; set; } = new();
+    public List<string> TenderNinjaDays { get; set; } = new();
 }
