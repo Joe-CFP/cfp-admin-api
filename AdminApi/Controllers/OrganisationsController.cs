@@ -1,25 +1,26 @@
 ﻿using AdminApi.Cache;
 using AdminApi.Entities;
+using AdminApi.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AdminApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class OrganisationsController(IOrganisationCache cache) : ControllerBase
+public class OrganisationsController(IOrganisationCache cache, IDatabaseRepository db) : ControllerBase
 {
     [HttpGet]
     public IActionResult GetAll()
     {
-        IEnumerable<Organisation> orgs = cache.GetAll();
+        IReadOnlyList<OrganisationSearchResult> orgs = cache.GetAll();
         return Ok(orgs);
     }
 
     [HttpGet("{id:int}")]
-    public IActionResult GetById(int id)
+    public async Task<IActionResult> GetById(int id)
     {
-        Organisation? org = cache.GetById(id);
-        return org is not null ? Ok(org) : NotFound();
+        Organisation org = await db.GetOrganisationByIdAsync(id);
+        return Ok(org);
     }
 
     [HttpGet("search")]
@@ -27,7 +28,7 @@ public class OrganisationsController(IOrganisationCache cache) : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(query)) return BadRequest("Query is required");
 
-        IEnumerable<OrganisationSearchResult> results = cache.Search(query, limit);
+        List<OrganisationSearchResult> results = cache.Search(query, limit);
         return Ok(results);
     }
 }

@@ -5,16 +5,14 @@ namespace AdminApi.Cache;
 
 public interface IOrganisationCache
 {
-    IReadOnlyList<Organisation> GetAll();
-    Organisation? GetById(int id);
+    IReadOnlyList<OrganisationSearchResult> GetAll();
     List<OrganisationSearchResult> Search(string query, int limit = 10);
 }
 
 public class OrganisationCache : IOrganisationCache
 {
     private readonly IServiceScopeFactory _scopeFactory;
-    private List<Organisation> _organisations = [];
-    // ReSharper disable once NotAccessedField.Local
+    private List<OrganisationSearchResult> _organisations = [];
     private Timer? _timer;
 
     public OrganisationCache(IServiceScopeFactory scopeFactory)
@@ -24,8 +22,7 @@ public class OrganisationCache : IOrganisationCache
         _timer = new Timer(_ => Refresh(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
     }
 
-    public IReadOnlyList<Organisation> GetAll() => _organisations.AsReadOnly();
-    public Organisation? GetById(int id) => _organisations.FirstOrDefault(o => o.Id == id);
+    public IReadOnlyList<OrganisationSearchResult> GetAll() => _organisations.AsReadOnly();
 
     public List<OrganisationSearchResult> Search(string query, int limit = 10)
     {
@@ -36,7 +33,6 @@ public class OrganisationCache : IOrganisationCache
             .OrderBy(o => o.Name.IndexOf(query, StringComparison.OrdinalIgnoreCase))
             .ThenBy(o => o.Name)
             .Take(limit)
-            .Select(o => new OrganisationSearchResult { Id = o.Id, Name = o.Name })
             .ToList();
     }
 
@@ -45,7 +41,7 @@ public class OrganisationCache : IOrganisationCache
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IDatabaseRepository>();
 
-        _organisations = (await db.GetAllOrganisationsAsync()).ToList();
+        _organisations = (await db.GetAllOrganisationSummariesAsync()).ToList();
     }
     
     private void Refresh()

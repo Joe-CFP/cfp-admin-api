@@ -46,27 +46,6 @@ public partial class DatabaseRepository : IDatabaseRepository
         return organisations;
     }
 
-    public async Task<IEnumerable<OrganisationSearchResult>> SearchOrganisationsAsync(string query, int limit = 10)
-    {
-        await using MySqlConnection connection = new(ConnectionString);
-
-        const string sql = """
-                           SELECT orgid AS Id, orgname AS Name
-                               FROM kborgindex
-                               WHERE LOCATE(@query, orgname) > 0
-                               ORDER BY LOCATE(@query, orgname), orgname
-                               LIMIT @limit
-                           """;
-
-        Stopwatch stopwatch = Stopwatch.StartNew();
-        IEnumerable<OrganisationSearchResult> results =
-            await connection.QueryAsync<OrganisationSearchResult>(sql, new { query, limit });
-        stopwatch.Stop();
-        Console.WriteLine($"SearchOrganisationsAsync took {stopwatch.ElapsedMilliseconds} ms for query: '{query}'");
-
-        return results;
-    }
-
     public async Task<Member> GetMemberByIdAsync(int id)
     {
         await using MySqlConnection connection = new MySqlConnection(ConnectionString);
