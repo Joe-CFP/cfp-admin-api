@@ -3,6 +3,7 @@ namespace AdminApi.Entities;
 
 public class Member: MemberRecord
 {
+    public string? CurrentState { get; set; }
     public string SubscriptionCode { get; set; }
     public string SubscriptionName { get; set; }
     public UserJourney? UserJourney { get; set; }
@@ -12,12 +13,4 @@ public class Member: MemberRecord
     public bool WeeklyCsv { get; set; }
     public DateTime? RegistrationDate { get; set; }
     public MemberActivity? Activity { get; set; }
-}
-
-public class MemberSearchResult
-{
-    public int Id { get; set; }
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-    public string Email { get; set; }
 }

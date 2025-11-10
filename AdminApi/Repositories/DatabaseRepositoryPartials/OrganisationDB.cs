@@ -1,8 +1,10 @@
 ﻿using System.Data;
+using System.Diagnostics;
 using AdminApi.Db;
 using Dapper;
 using MySql.Data.MySqlClient;
 using AdminApi.Entities;
+using static AdminApi.Entities.MemberRecord;
 
 namespace AdminApi.Repositories;
 
@@ -12,13 +14,20 @@ public partial class DatabaseRepository
     {
         await using MySqlConnection connection = new(ConnectionString);
 
+        Stopwatch stopwatch = Stopwatch.StartNew();
+
         const string sql = """
                            SELECT orgid AS Id, orgname AS Name
                            FROM kborgindex
                            ORDER BY orgname
                            """;
 
-        return (await connection.QueryAsync<OrganisationSearchResult>(sql)).ToList();
+        List<OrganisationSearchResult> results = (await connection.QueryAsync<OrganisationSearchResult>(sql)).ToList();
+
+        stopwatch.Stop();
+        Console.WriteLine($"GetAllOrganisationSummariesAsync took {stopwatch.ElapsedMilliseconds} ms");
+
+        return results;
     }
 
     public async Task<Organisation> GetOrganisationByIdAsync(int id)
@@ -32,26 +41,33 @@ public partial class DatabaseRepository
         if (record == null)
             throw new DataException("Couldn't retrieve Organisation record from database");
 
-        List<Member> members = await GetMembersByOrgGuidAsync(record.Guid);
+        List<MemberPreview> members = await GetMemberPreviewsByOrgGuidAsync(record.Guid);
         MemberActivity activity = await GetOrganisationMemberActivityAsync(record.Id);
 
         return record.ToOrganisation(members, activity);
     }
 
-    private async Task<List<Member>> GetMembersByOrgGuidAsync(string orgGuid)
+    private async Task<List<MemberPreview>> GetMemberPreviewsByOrgGuidAsync(string orgGuid)
     {
         await using MySqlConnection connection = new(ConnectionString);
 
-        const string idsSql = "SELECT id FROM members WHERE orgguid = @orgGuid";
-        IEnumerable<int> memberIds = await connection.QueryAsync<int>(idsSql, new { orgGuid });
+        const string sql = """
+                           SELECT m.id AS Id,
+                                  m.username AS Username,
+                                  m.firstname AS FirstName,
+                                  m.lastname AS LastName,
+                                  uj.curstate AS CurrentState,
+                                  mo.subtype AS SubscriptionName
+                           FROM members m
+                           LEFT JOIN userjourney uj ON uj.username = m.username
+                           LEFT JOIN memberoptions mo ON mo.id = m.id
+                           WHERE m.orgguid = @orgGuid
+                           ORDER BY Username
+                           """;
 
-        List<Member> members = new();
-        foreach (int memberId in memberIds)
-        {
-            Member m = await GetMemberByIdAsync(memberId);
-            members.Add(m);
-        }
-
-        return members;
+        List<MemberPreview> previews = (await connection.QueryAsync<MemberPreview>(sql, new { orgGuid })).ToList();
+        foreach (var p in previews)
+            p.SubscriptionName = SubscriptionNameFromCode.GetValueOrDefault(p.SubscriptionName, "Unknown");
+        return previews;
     }
 }

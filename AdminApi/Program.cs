@@ -1,7 +1,6 @@
 using AdminApi.Cache;
 using AdminApi.Lib;
 using AdminApi.Repositories;
-using AdminApi.Routing;
 using static System.Text.Json.Serialization.JsonIgnoreCondition;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);

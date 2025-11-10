@@ -27,19 +27,26 @@ public class MemberRecord
     public int? OrganisationId { get; set; }
     public string? OrganisationName { get; set; }
 
-    private static readonly Dictionary<string, string> SubscriptionNameFromCode = new()
+    public static readonly Dictionary<string, string> SubscriptionNameFromCode = new()
     {
         { "EURO", "Euro" },
         { "STAN", "Legacy" },
         { "PREM", "Pro" },
         { "BASI", "Basic" }
     };
-    
+
+    private static string SubscriptionCasesSql =>
+        string.Join("\n", SubscriptionNameFromCode.Select(kv => $"WHEN '{kv.Key}' THEN '{kv.Value}'"));
+
+    public static string SubscriptionCaseSql =>
+        $"CASE mo.subtype {SubscriptionCasesSql} ELSE 'Unknown' END AS SubscriptionName";
+
     public Member ToMember(MemberOptions? memberOptions, UserJourney? userJourney, DateTime? estimatedRegistrationDate, MemberActivity? activity)
     {
         Member member = new();
         PropertyMapper.CopyMatchingProperties(this, member);
         member.UserJourney = userJourney;
+        member.CurrentState = userJourney?.CurrentState;
         if(memberOptions!=null)
             PropertyMapper.CopyMatchingProperties(memberOptions, member);
         member.SubscriptionName = SubscriptionNameFromCode.GetValueOrDefault(member.SubscriptionCode, "Unknown");

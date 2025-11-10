@@ -3,7 +3,7 @@ namespace AdminApi.Entities;
 
 public class Organisation : OrganisationRecord
 {
-    public List<Member> Members { get; set; }
+    public List<MemberPreview> Members { get; set; }
     public MemberActivity? Activity { get; set; }
 }
 

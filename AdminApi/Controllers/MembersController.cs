@@ -20,7 +20,7 @@ public class MembersController(IDatabaseRepository db) : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(query)) return BadRequest("Query is required");
 
-        IEnumerable<MemberSearchResult> results = await db.SearchMembersAsync(query, limit);
+        IEnumerable<MemberPreview> results = await db.SearchMembersAsync(query, limit);
         return Ok(results);
     }
 }
