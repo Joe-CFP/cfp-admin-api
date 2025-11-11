@@ -9,7 +9,7 @@ namespace AdminApi.Repositories;
 
 public partial class DatabaseRepository
 {
-    public async Task<Member> GetMemberByIdAsync(int id)
+    public async Task<Member?> GetMemberByIdAsync(int id)
     {
         await using MySqlConnection connection = new MySqlConnection(ConnectionString);
 
@@ -24,7 +24,7 @@ public partial class DatabaseRepository
                      " WHERE members.id = @id";
 
         MemberRecord? record = await connection.QueryFirstOrDefaultAsync<MemberRecord>(sql, new { id });
-        if (record == null) throw new DataException("Couldn't retrieve Member record from database");
+        if (record == null) return null;
 
         UserJourney journey = await GetUserJourneyByUsernameAsync(record.Username);
         MemberOptions options = await GetMemberOptionsByMemberIdAsync(record.Id);
@@ -58,6 +58,32 @@ public partial class DatabaseRepository
         return record.ToMemberOptions();
     }
 
+    private async Task<DateTime?> GetEarliestInteractionAsync(int memberId)
+    {
+        await using MySqlConnection connection = new(ConnectionString);
+
+        // Step 1: get member email + mod date
+        const string memberSql = "SELECT email, mod_timestamp FROM members WHERE id = @id";
+        var member =
+            await connection.QueryFirstOrDefaultAsync<(string Email, DateTime? ModTimestamp)>(memberSql,
+                new { id = memberId });
+        if (member.Email == null)
+            throw new DataException($"Couldn't retrieve member {memberId}");
+
+        // Step 2: get earliest email sent to this address
+        const string emailSql = "SELECT MIN(sentdate) FROM emailhistory WHERE destemail = @email";
+        DateTime? earliestEmailDate =
+            await connection.ExecuteScalarAsync<DateTime?>(emailSql, new { email = member.Email });
+
+        // Step 3: return earliest non-null
+        DateTime? modDate = member.ModTimestamp == DateTime.MinValue ? null : member.ModTimestamp;
+        if (modDate == null && earliestEmailDate == null) return null;
+        if (modDate == null) return earliestEmailDate;
+        if (earliestEmailDate == null) return modDate;
+
+        return modDate < earliestEmailDate ? modDate : earliestEmailDate;
+    }
+
     public async Task<IEnumerable<MemberPreview>> SearchMembersAsync(string query, int limit = 10)
     {
         await using MySqlConnection connection = new(ConnectionString);
@@ -87,29 +113,25 @@ public partial class DatabaseRepository
             new { query, pattern = $"%{query}%", limit = Math.Min(limit,100) });
     }
 
-    public async Task<DateTime?> GetEarliestInteractionAsync(int memberId)
+    public async Task<MemberPreview?> GetMemberPreviewByEmailAsync(string email)
     {
         await using MySqlConnection connection = new(ConnectionString);
 
-        // Step 1: get member email + mod date
-        const string memberSql = "SELECT email, mod_timestamp FROM members WHERE id = @id";
-        var member =
-            await connection.QueryFirstOrDefaultAsync<(string Email, DateTime? ModTimestamp)>(memberSql,
-                new { id = memberId });
-        if (member.Email == null)
-            throw new DataException($"Couldn't retrieve member {memberId}");
+        string sql = $"""
+                      SELECT 
+                          m.id AS Id,
+                          m.username AS Username,
+                          m.firstname AS FirstName,
+                          m.lastname AS LastName,
+                          uj.curstate AS CurrentState,
+                          {MemberRecord.SubscriptionCaseSql}
+                      FROM members m
+                      LEFT JOIN memberoptions mo ON mo.id = m.id
+                      LEFT JOIN userjourney uj ON uj.username = m.email
+                      WHERE m.email = @Email
+                      LIMIT 1
+                      """;
 
-        // Step 2: get earliest email sent to this address
-        const string emailSql = "SELECT MIN(sentdate) FROM emailhistory WHERE destemail = @email";
-        DateTime? earliestEmailDate =
-            await connection.ExecuteScalarAsync<DateTime?>(emailSql, new { email = member.Email });
-
-        // Step 3: return earliest non-null
-        DateTime? modDate = member.ModTimestamp == DateTime.MinValue ? null : member.ModTimestamp;
-        if (modDate == null && earliestEmailDate == null) return null;
-        if (modDate == null) return earliestEmailDate;
-        if (earliestEmailDate == null) return modDate;
-
-        return modDate < earliestEmailDate ? modDate : earliestEmailDate;
+        return await connection.QueryFirstOrDefaultAsync<MemberPreview>(sql, new { Email = email });
     }
 }

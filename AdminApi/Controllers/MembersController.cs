@@ -23,4 +23,11 @@ public class MembersController(IDatabaseRepository db) : ControllerBase
         IEnumerable<MemberPreview> results = await db.SearchMembersAsync(query, limit);
         return Ok(results);
     }
+    
+    [HttpGet("by-email/{email}")]
+    public async Task<IActionResult> GetByEmail(string email)
+    {
+        MemberPreview? member = await db.GetMemberPreviewByEmailAsync(email);
+        return member is not null ? Ok(member) : NotFound();
+    }
 }
