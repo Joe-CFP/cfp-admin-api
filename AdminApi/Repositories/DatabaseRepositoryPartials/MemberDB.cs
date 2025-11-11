@@ -84,54 +84,42 @@ public partial class DatabaseRepository
         return modDate < earliestEmailDate ? modDate : earliestEmailDate;
     }
 
+    private static string GetMemberPreviewBaseSql()
+    {
+        return $"""
+                SELECT 
+                    m.id AS Id,
+                    m.username AS Username,
+                    m.firstname AS FirstName,
+                    m.lastname AS LastName,
+                    uj.curstate AS CurrentState,
+                    {MemberRecord.SubscriptionCaseSql}
+                FROM members m
+                LEFT JOIN memberoptions mo ON mo.id = m.id
+                LEFT JOIN userjourney uj ON uj.username = m.email
+                """;
+    }
+    
     public async Task<IEnumerable<MemberPreview>> SearchMembersAsync(string query, int limit = 10)
     {
         await using MySqlConnection connection = new(ConnectionString);
 
-        string sql = $"""
-                      SELECT 
-                          m.id AS Id,
-                          m.username AS Username,
-                          m.firstname AS FirstName,
-                          m.lastname AS LastName,
-                          uj.curstate AS CurrentState,
-                          {MemberRecord.SubscriptionCaseSql}
-                      FROM members m
-                      LEFT JOIN userjourney uj ON uj.username = m.email
-                      LEFT JOIN memberoptions mo ON mo.id = m.id
-                      WHERE m.firstname LIKE @pattern 
-                         OR m.lastname LIKE @pattern 
-                         OR m.email LIKE @pattern
-                      ORDER BY LOCATE(@query, m.firstname), 
-                               LOCATE(@query, m.lastname), 
-                               LOCATE(@query, m.email), 
-                               m.firstname, m.lastname
-                      LIMIT @limit
-                      """;
+        string sql = GetMemberPreviewBaseSql() + "\n" +
+                     """
+                     WHERE m.firstname LIKE @pattern OR m.lastname LIKE @pattern OR m.email LIKE @pattern
+                     ORDER BY LOCATE(@query, m.firstname), LOCATE(@query, m.lastname), 
+                              LOCATE(@query, m.email), m.firstname, m.lastname
+                     LIMIT @limit
+                     """;
 
         return await connection.QueryAsync<MemberPreview>(sql,
-            new { query, pattern = $"%{query}%", limit = Math.Min(limit,100) });
+            new { query, pattern = $"%{query}%", limit = Math.Min(limit, 100) });
     }
 
     public async Task<MemberPreview?> GetMemberPreviewByEmailAsync(string email)
     {
         await using MySqlConnection connection = new(ConnectionString);
-
-        string sql = $"""
-                      SELECT 
-                          m.id AS Id,
-                          m.username AS Username,
-                          m.firstname AS FirstName,
-                          m.lastname AS LastName,
-                          uj.curstate AS CurrentState,
-                          {MemberRecord.SubscriptionCaseSql}
-                      FROM members m
-                      LEFT JOIN memberoptions mo ON mo.id = m.id
-                      LEFT JOIN userjourney uj ON uj.username = m.email
-                      WHERE m.email = @Email
-                      LIMIT 1
-                      """;
-
+        string sql = GetMemberPreviewBaseSql() + " WHERE m.email = @Email LIMIT 1";
         return await connection.QueryFirstOrDefaultAsync<MemberPreview>(sql, new { Email = email });
     }
 }
