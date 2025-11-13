@@ -9,4 +9,6 @@ public class MemberPreview
     public string LastName { get; set; }
     public string CurrentState { get; set; }
     public string SubscriptionName { get; set; }
+    public int? OrganisationId { get; set; }
+    public string? OrganisationName { get; set; }
 }

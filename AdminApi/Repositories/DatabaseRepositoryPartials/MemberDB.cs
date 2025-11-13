@@ -41,10 +41,13 @@ public partial class DatabaseRepository
         string sql = $"{BuildSelectSql(TableDefinitions.UserJourneyTable)} WHERE username = @username";
 
         UserJourneyRecord? record = await connection.QueryFirstOrDefaultAsync<UserJourneyRecord>(sql, new { username });
-        if (record == null)
-            throw new DataException($"Couldn't retrieve user journey for username: {username}");
 
-        return record.ToUserJourney();
+        return record?.ToUserJourney()
+            ?? new UserJourney {
+                Username = username, CurrentState = "Missing User Journey",
+                CurrentStateDateTime = DateTime.MinValue,
+                Actions = new(), History = new(), Events = new()
+            };
     }
 
     private async Task<MemberOptions> GetMemberOptionsByMemberIdAsync(int memberId)
@@ -87,19 +90,22 @@ public partial class DatabaseRepository
     private static string GetMemberPreviewBaseSql()
     {
         return $"""
-                SELECT 
-                    m.id AS Id,
-                    m.username AS Username,
-                    m.firstname AS FirstName,
-                    m.lastname AS LastName,
-                    uj.curstate AS CurrentState,
-                    {MemberRecord.SubscriptionCaseSql}
+            SELECT 
+                m.id AS Id,
+                m.username AS Username,
+                m.firstname AS FirstName,
+                m.lastname AS LastName,
+                uj.curstate AS CurrentState,
+                {MemberRecord.SubscriptionCaseSql},
+                kborgindex.orgid AS OrganisationId,
+                kborgindex.orgname AS OrganisationName
                 FROM members m
-                LEFT JOIN memberoptions mo ON mo.id = m.id
-                LEFT JOIN userjourney uj ON uj.username = m.email
-                """;
+                    LEFT JOIN memberoptions mo ON mo.id = m.id
+                    LEFT JOIN userjourney uj ON uj.username = m.email
+                    LEFT JOIN kborgindex ON kborgindex.orgguid = m.orgguid
+        """;
     }
-    
+
     public async Task<IEnumerable<MemberPreview>> SearchMembersAsync(string query, int limit = 10)
     {
         await using MySqlConnection connection = new(ConnectionString);

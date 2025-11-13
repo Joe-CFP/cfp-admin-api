@@ -34,7 +34,7 @@ public partial class DatabaseRepository
     {
         await using MySqlConnection connection = new(ConnectionString);
 
-        string orgSql = BuildSelectSql(TableDefinitions.OrganisationTable) + 
+        string orgSql = BuildSelectSql(TableDefinitions.OrganisationTable) +
                         " WHERE kborgindex.orgid = @id";
         OrganisationRecord? record =
             await connection.QueryFirstOrDefaultAsync<OrganisationRecord>(orgSql, new { id });
@@ -50,24 +50,7 @@ public partial class DatabaseRepository
     private async Task<List<MemberPreview>> GetMemberPreviewsByOrgGuidAsync(string orgGuid)
     {
         await using MySqlConnection connection = new(ConnectionString);
-
-        const string sql = """
-                           SELECT m.id AS Id,
-                                  m.username AS Username,
-                                  m.firstname AS FirstName,
-                                  m.lastname AS LastName,
-                                  uj.curstate AS CurrentState,
-                                  mo.subtype AS SubscriptionName
-                           FROM members m
-                           LEFT JOIN userjourney uj ON uj.username = m.username
-                           LEFT JOIN memberoptions mo ON mo.id = m.id
-                           WHERE m.orgguid = @orgGuid
-                           ORDER BY Username
-                           """;
-
-        List<MemberPreview> previews = (await connection.QueryAsync<MemberPreview>(sql, new { orgGuid })).ToList();
-        foreach (var p in previews)
-            p.SubscriptionName = SubscriptionNameFromCode.GetValueOrDefault(p.SubscriptionName, "Unknown");
-        return previews;
+        string sql = GetMemberPreviewBaseSql() + " WHERE m.orgguid = @orgGuid ORDER BY m.username";
+        return (await connection.QueryAsync<MemberPreview>(sql, new { orgGuid })).ToList();
     }
 }
