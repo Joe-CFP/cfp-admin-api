@@ -1,36 +1,36 @@
-﻿using System.Data;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using AdminApi.Db;
 using Dapper;
 using MySql.Data.MySqlClient;
 using AdminApi.Entities;
-using static AdminApi.Entities.MemberRecord;
 
 namespace AdminApi.Repositories;
 
 public partial class DatabaseRepository
 {
-    public async Task<List<OrganisationSearchResult>> GetAllOrganisationSummariesAsync()
+    public async Task<List<OrganisationPreview>> GetAllOrganisationPreviewsAsync()
     {
         await using MySqlConnection connection = new(ConnectionString);
 
         Stopwatch stopwatch = Stopwatch.StartNew();
 
         const string sql = """
-                           SELECT orgid AS Id, orgname AS Name
-                           FROM kborgindex
-                           ORDER BY orgname
+                           SELECT o.orgid AS Id, o.orgname AS Name, COUNT(m.id) AS MemberCount
+                           FROM kborgindex o
+                           LEFT JOIN members m ON m.orgguid = o.orgguid
+                           GROUP BY o.orgid, o.orgname
+                           ORDER BY o.orgname
                            """;
 
-        List<OrganisationSearchResult> results = (await connection.QueryAsync<OrganisationSearchResult>(sql)).ToList();
+        List<OrganisationPreview> results = (await connection.QueryAsync<OrganisationPreview>(sql)).ToList();
 
         stopwatch.Stop();
-        Console.WriteLine($"GetAllOrganisationSummariesAsync took {stopwatch.ElapsedMilliseconds} ms");
+        Console.WriteLine($"GetAllOrganisationPreviewsAsync took {stopwatch.ElapsedMilliseconds} ms");
 
         return results;
     }
 
-    public async Task<Organisation> GetOrganisationByIdAsync(int id)
+    public async Task<Organisation?> GetOrganisationByIdAsync(int id)
     {
         await using MySqlConnection connection = new(ConnectionString);
 
@@ -39,12 +39,13 @@ public partial class DatabaseRepository
         OrganisationRecord? record =
             await connection.QueryFirstOrDefaultAsync<OrganisationRecord>(orgSql, new { id });
         if (record == null)
-            throw new DataException("Couldn't retrieve Organisation record from database");
+            return null;
 
         List<MemberPreview> members = await GetMemberPreviewsByOrgGuidAsync(record.Guid);
-        MemberActivity activity = await GetOrganisationMemberActivityAsync(record.Id);
 
-        return record.ToOrganisation(members, activity);
+        Organisation org = record.ToOrganisation(members);
+        org.MemberCount = members.Count;
+        return org;
     }
 
     private async Task<List<MemberPreview>> GetMemberPreviewsByOrgGuidAsync(string orgGuid)

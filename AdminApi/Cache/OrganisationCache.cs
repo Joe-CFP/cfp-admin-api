@@ -5,14 +5,14 @@ namespace AdminApi.Cache;
 
 public interface IOrganisationCache
 {
-    IReadOnlyList<OrganisationSearchResult> GetAll();
-    List<OrganisationSearchResult> Search(string query, int limit = 10);
+    IReadOnlyList<OrganisationPreview> GetAll();
+    List<OrganisationPreview> Search(string query, int limit = 10);
 }
 
 public class OrganisationCache : IOrganisationCache
 {
     private readonly IServiceScopeFactory _scopeFactory;
-    private List<OrganisationSearchResult> _organisations = [];
+    private List<OrganisationPreview> _organisations = [];
     private Timer? _timer;
 
     public OrganisationCache(IServiceScopeFactory scopeFactory)
@@ -22,9 +22,9 @@ public class OrganisationCache : IOrganisationCache
         _timer = new Timer(_ => Refresh(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
     }
 
-    public IReadOnlyList<OrganisationSearchResult> GetAll() => _organisations.AsReadOnly();
+    public IReadOnlyList<OrganisationPreview> GetAll() => _organisations.AsReadOnly();
 
-    public List<OrganisationSearchResult> Search(string query, int limit = 10)
+    public List<OrganisationPreview> Search(string query, int limit = 10)
     {
         if (string.IsNullOrWhiteSpace(query)) return [];
 
@@ -38,10 +38,10 @@ public class OrganisationCache : IOrganisationCache
 
     private async Task LoadOrganisations()
     {
-        using var scope = _scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<IDatabaseRepository>();
+        using IServiceScope scope = _scopeFactory.CreateScope();
+        IDatabaseRepository db = scope.ServiceProvider.GetRequiredService<IDatabaseRepository>();
 
-        _organisations = (await db.GetAllOrganisationSummariesAsync()).ToList();
+        _organisations = (await db.GetAllOrganisationPreviewsAsync()).ToList();
     }
     
     private void Refresh()

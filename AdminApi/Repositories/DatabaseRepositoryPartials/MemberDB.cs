@@ -11,27 +11,47 @@ public partial class DatabaseRepository
 {
     public async Task<Member?> GetMemberByIdAsync(int id)
     {
-        await using MySqlConnection connection = new MySqlConnection(ConnectionString);
+        await using MySqlConnection connection = new(ConnectionString);
 
         var extras = new (string SqlExpr, string Alias)[]
         {
             ("kborgindex.orgid", "OrganisationId"),
-            ("kborgindex.orgname", "OrganisationName")
+            ("kborgindex.orgname", "OrganisationName"),
+            ("uj.curstate", "CurrentState"),
+            ("(SELECT COUNT(*) FROM members m2 WHERE m2.orgguid = members.orgguid)", "OrganisationMemberCount")
         };
 
         string sql = BuildSelectSql(TableDefinitions.MemberTable, extras) +
                      " LEFT JOIN kborgindex ON kborgindex.orgguid = members.orgguid" +
+                     " LEFT JOIN userjourney uj ON uj.username = members.email" +
                      " WHERE members.id = @id";
 
         MemberRecord? record = await connection.QueryFirstOrDefaultAsync<MemberRecord>(sql, new { id });
         if (record == null) return null;
 
-        UserJourney journey = await GetUserJourneyByUsernameAsync(record.Username);
         MemberOptions options = await GetMemberOptionsByMemberIdAsync(record.Id);
         DateTime? estimatedRegistrationDate = await GetEarliestInteractionAsync(record.Id);
-        MemberActivity activity = await GetMemberActivityAsync(record.Id, record.Email);
 
-        return record.ToMember(options, journey, estimatedRegistrationDate, activity);
+        return record.ToMember(options, estimatedRegistrationDate);
+    }
+
+    public async Task<UserJourney?> GetMemberJourneyByIdAsync(int id)
+    {
+        await using MySqlConnection connection = new(ConnectionString);
+        const string sql = "SELECT username FROM members WHERE id = @id";
+        string? username = await connection.ExecuteScalarAsync<string?>(sql, new { id });
+        if (string.IsNullOrWhiteSpace(username)) return null;
+        return await GetUserJourneyByUsernameAsync(username);
+    }
+
+    public async Task<MemberActivity?> GetMemberActivityByIdAsync(int id)
+    {
+        await using MySqlConnection connection = new(ConnectionString);
+        const string sql = "SELECT email FROM members WHERE id = @id";
+        string? email = await connection.ExecuteScalarAsync<string?>(sql, new { id });
+        if (string.IsNullOrWhiteSpace(email)) return null;
+        MemberActivity activity = await GetMemberActivityAsync(id, email);
+        return activity;
     }
 
     private async Task<UserJourney> GetUserJourneyByUsernameAsync(string username)
@@ -65,7 +85,6 @@ public partial class DatabaseRepository
     {
         await using MySqlConnection connection = new(ConnectionString);
 
-        // Step 1: get member email + mod date
         const string memberSql = "SELECT email, mod_timestamp FROM members WHERE id = @id";
         var member =
             await connection.QueryFirstOrDefaultAsync<(string Email, DateTime? ModTimestamp)>(memberSql,
@@ -73,12 +92,10 @@ public partial class DatabaseRepository
         if (member.Email == null)
             throw new DataException($"Couldn't retrieve member {memberId}");
 
-        // Step 2: get earliest email sent to this address
         const string emailSql = "SELECT MIN(sentdate) FROM emailhistory WHERE destemail = @email";
         DateTime? earliestEmailDate =
             await connection.ExecuteScalarAsync<DateTime?>(emailSql, new { email = member.Email });
 
-        // Step 3: return earliest non-null
         DateTime? modDate = member.ModTimestamp == DateTime.MinValue ? null : member.ModTimestamp;
         if (modDate == null && earliestEmailDate == null) return null;
         if (modDate == null) return earliestEmailDate;

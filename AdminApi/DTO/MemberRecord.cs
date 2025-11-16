@@ -26,6 +26,8 @@ public class MemberRecord
     public string? OrganisationGuid { get; set; }
     public int? OrganisationId { get; set; }
     public string? OrganisationName { get; set; }
+    public int OrganisationMemberCount { get; set; }
+    public string? CurrentState { get; set; }
 
     public static readonly Dictionary<string, string> SubscriptionNameFromCode = new()
     {
@@ -41,17 +43,14 @@ public class MemberRecord
     public static string SubscriptionCaseSql =>
         $"CASE mo.subtype {SubscriptionCasesSql} ELSE 'Unknown' END AS SubscriptionName";
 
-    public Member ToMember(MemberOptions? memberOptions, UserJourney? userJourney, DateTime? estimatedRegistrationDate, MemberActivity? activity)
+    public Member ToMember(MemberOptions? memberOptions, DateTime? estimatedRegistrationDate)
     {
         Member member = new();
         PropertyMapper.CopyMatchingProperties(this, member);
-        member.UserJourney = userJourney;
-        member.CurrentState = userJourney?.CurrentState;
-        if(memberOptions!=null)
+        if (memberOptions != null)
             PropertyMapper.CopyMatchingProperties(memberOptions, member);
         member.SubscriptionName = SubscriptionNameFromCode.GetValueOrDefault(member.SubscriptionCode, "Unknown");
         member.RegistrationDate = estimatedRegistrationDate;
-        member.Activity = activity;
         return member;
     }
 }

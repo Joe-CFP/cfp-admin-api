@@ -17,15 +17,14 @@ public class OrganisationRecord
     public string OptionsString { get; set; }
     public int Version { get; set; }
     public string DataResidency { get; set; }
-    public bool HasBidEvaluationModel { get; set; }
+    public bool HasBidEvaluationModule { get; set; }
     public bool HasClaudeModule { get; set; }
 
-    public Organisation ToOrganisation(List<MemberPreview>? members, MemberActivity? activity)
+    public Organisation ToOrganisation(List<MemberPreview>? members)
     {
         Organisation organisation = new();
         PropertyMapper.CopyMatchingProperties(this, organisation);
         organisation.Members = members ?? new List<MemberPreview>();
-        organisation.Activity = activity;
         return organisation;
     }
 }

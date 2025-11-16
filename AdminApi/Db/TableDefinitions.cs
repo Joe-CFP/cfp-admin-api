@@ -25,7 +25,7 @@ public static class TableDefinitions
             FieldFor<OrganisationRecord, string>(o => o.OptionsString, "optionsstring", "Miscellaneous options in serialized string format", "mediumtext", 16777215),
             FieldFor<OrganisationRecord, int>(o => o.Version, "version", "Data version or schema version", "int"),
             FieldFor<OrganisationRecord, string>(o => o.DataResidency, "dataresidencystring", "Data residency (global, eu, or uk)", "varchar", 60),
-            FieldFor<OrganisationRecord, bool>(o => o.HasBidEvaluationModel, "mod_be", "Whether Bid Evaluation module is enabled", "tinyint"),
+            FieldFor<OrganisationRecord, bool>(o => o.HasBidEvaluationModule, "mod_be", "Whether Bid Evaluation module is enabled", "tinyint"),
             FieldFor<OrganisationRecord, bool>(o => o.HasClaudeModule, "mod_claude", "Whether Claude module is enabled", "tinyint")
         }
     };
