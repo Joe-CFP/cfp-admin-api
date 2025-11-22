@@ -15,7 +15,7 @@ public static class UserJourneyHistoryHelper
     public static Dictionary<string, UserJourneyHistoryState> DeserializeHistory(string? historyJson)
     {
         if (string.IsNullOrWhiteSpace(historyJson))
-            return new Dictionary<string, UserJourneyHistoryState>();
+            return new();
 
         try
         {
@@ -34,7 +34,7 @@ public static class UserJourneyHistoryHelper
                     AutoNextStateDateTime = kv.Value.AutoNextStateDateTime,
                     Actions = kv.Value.Actions != null
                         ? kv.Value.Actions.ToDictionary(p => p.Key, p => p.Value.ToAction(0))
-                        : new Dictionary<string, UserJourneyAction>()
+                        : new()
                 };
 
                 result[kv.Key] = state;
@@ -45,7 +45,7 @@ public static class UserJourneyHistoryHelper
         catch (JsonException ex)
         {
             Console.WriteLine($"Failed to parse historyJson: {ex.Message}");
-            return new Dictionary<string, UserJourneyHistoryState>();
+            return new();
         }
     }
 
@@ -58,8 +58,7 @@ public static class UserJourneyHistoryHelper
             DateTime? entered = NormalizeDate(stateRecord.CurStateDateTime);
             if (entered != null)
             {
-                events.Add(new UserJourneyEvent
-                {
+                events.Add(new() {
                     Timestamp = entered.Value,
                     EventType = "StateEntered",
                     State = stateKey
@@ -73,8 +72,7 @@ public static class UserJourneyHistoryHelper
                 DateTime? ts = NormalizeDate(action.CompletedAt) ?? NormalizeDate(action.ExecuteAfter);
                 if (ts == null) continue;
 
-                events.Add(new UserJourneyEvent
-                {
+                events.Add(new() {
                     Timestamp = ts.Value,
                     EventType = "ActionExecuted",
                     State = stateKey,
@@ -87,8 +85,7 @@ public static class UserJourneyHistoryHelper
 
         if (NormalizeDate(journey.CurrentStateDateTime) is { } curEntered)
         {
-            events.Add(new UserJourneyEvent
-            {
+            events.Add(new() {
                 Timestamp = curEntered,
                 EventType = "StateEntered",
                 State = journey.CurrentState
@@ -100,8 +97,7 @@ public static class UserJourneyHistoryHelper
             DateTime? timeStamp = NormalizeDate(action.CompletedAt) ?? NormalizeDate(action.ExecuteAfter);
             if (timeStamp == null) continue;
 
-            events.Add(new UserJourneyEvent
-            {
+            events.Add(new() {
                 Timestamp = timeStamp.Value,
                 EventType = "ActionExecuted",
                 State = journey.CurrentState,

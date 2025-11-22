@@ -57,7 +57,7 @@ public class SecretStore : ISecretStore
     public static async Task<SecretStore> CreateAsync(IEnumerable<SecretName> requestedSecrets, string configPath, string region)
     {
         if (!File.Exists(configPath))
-            throw new Exception($"Missing config at {configPath}");
+            throw new($"Missing config at {configPath}");
 
         XmlDocument doc = new();
         doc.Load(configPath);
@@ -66,7 +66,7 @@ public class SecretStore : ISecretStore
         string? secretKey = doc.SelectSingleNode("config/secretkey")?.InnerText;
 
         if (string.IsNullOrWhiteSpace(accessKey) || string.IsNullOrWhiteSpace(secretKey))
-            throw new Exception("Access key or secret key missing from config file.");
+            throw new("Access key or secret key missing from config file.");
 
         AmazonSecretsManagerClient client = new(accessKey, secretKey, RegionEndpoint.GetBySystemName(region));
 
@@ -75,13 +75,13 @@ public class SecretStore : ISecretStore
         foreach (SecretName name in requestedSecrets)
         {
             if (!AwsSecretNames.TryGetValue(name, out string? awsName))
-                throw new Exception($"No AWS secret name mapping for {name}");
+                throw new($"No AWS secret name mapping for {name}");
 
             Secret secret = await FetchSecretAsync(client, awsName);
             secrets[name] = secret;
         }
 
-        return new SecretStore(secrets);
+        return new(secrets);
     }
 
     public Secret this[SecretName name]
@@ -89,7 +89,7 @@ public class SecretStore : ISecretStore
         get
         {
             if (!_secrets.TryGetValue(name, out Secret? value))
-                throw new Exception($"Requested secret '${name}' wasn't included in the list specified at creation.");
+                throw new($"Requested secret '${name}' wasn't included in the list specified at creation.");
             return value;
         }
     }
@@ -107,7 +107,7 @@ public class SecretStore : ISecretStore
         JsonSerializerOptions options = new() { PropertyNameCaseInsensitive = true };
         Secret? parsed = JsonSerializer.Deserialize<Secret>(response.SecretString, options);
         if (parsed == null)
-            throw new Exception($"Failed to deserialize secret: {awsName}");
+            throw new($"Failed to deserialize secret: {awsName}");
 
         return parsed;
     }

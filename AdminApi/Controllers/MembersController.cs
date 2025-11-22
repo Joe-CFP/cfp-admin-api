@@ -43,4 +43,11 @@ public class MembersController(IDatabaseRepository db) : ControllerBase
         IEnumerable<MemberPreview> results = await db.SearchMembersAsync(query, limit);
         return Ok(results);
     }
+    
+    [HttpGet("{id:int}/saved-searches")]
+    public async Task<IActionResult> GetSavedSearches(int id)
+    {
+        IEnumerable<SavedSearch> searches = await db.GetSavedSearchesByMemberIdAsync(id);
+        return Ok(searches);
+    }
 }

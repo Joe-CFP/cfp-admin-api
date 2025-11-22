@@ -12,4 +12,5 @@ public interface IDatabaseRepository
     Task<Organisation?> GetOrganisationByIdAsync(int id);
     Task<MemberActivity> GetOrganisationMemberActivityAsync(int orgId);
     Task<MemberPreview?> GetMemberPreviewByEmailAsync(string email);
+    Task<IEnumerable<SavedSearch>> GetSavedSearchesByMemberIdAsync(int id);
 }

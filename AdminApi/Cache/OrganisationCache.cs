@@ -19,7 +19,7 @@ public class OrganisationCache : IOrganisationCache
     {
         _scopeFactory = scopeFactory;
         LoadOrganisations().GetAwaiter().GetResult();
-        _timer = new Timer(_ => Refresh(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+        _timer = new(_ => Refresh(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
     }
 
     public IReadOnlyList<OrganisationPreview> GetAll() => _organisations.AsReadOnly();

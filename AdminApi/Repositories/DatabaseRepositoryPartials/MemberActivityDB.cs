@@ -59,8 +59,7 @@ public partial class DatabaseRepository
 
         List<string> tenderNinjaDays = ninjaDays.Where(day => loginDays.Contains(day)).ToList();
 
-        return new MemberActivity
-        {
+        return new() {
             LoginDays = loginDays,
             EmailDays = emailDays,
             EmailErrorDays = emailErrorDays,

@@ -88,8 +88,7 @@ public class UserJourneyRecord : UserJourneyRecordBase
 
         public UserJourneyAction ToAction(int index)
         {
-            return new UserJourneyAction
-            {
+            return new() {
                 ActionIndex = index,
                 ActionId = Action,
                 ActionName = ActionString,

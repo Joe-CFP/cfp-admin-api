@@ -139,6 +139,14 @@ public partial class DatabaseRepository
             new { query, pattern = $"%{query}%", limit = Math.Min(limit, 100) });
     }
 
+    public async Task<IEnumerable<SavedSearch>> GetSavedSearchesByMemberIdAsync(int id)
+    {
+        await using MySqlConnection connection = new(ConnectionString);
+        string sql = BuildSelectSql(TableDefinitions.SavedSearchTable) + " WHERE search.userid = @id ORDER BY search.inserttime DESC";
+        IEnumerable<SavedSearchRecord> rows = await connection.QueryAsync<SavedSearchRecord>(sql, new { id });
+        return rows.Select(r => r.ToSavedSearch()).ToList();
+    }
+
     public async Task<MemberPreview?> GetMemberPreviewByEmailAsync(string email)
     {
         await using MySqlConnection connection = new(ConnectionString);

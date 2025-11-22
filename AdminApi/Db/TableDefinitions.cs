@@ -11,8 +11,7 @@ public static class TableDefinitions
         Name = "Organisation",
         DbName = "kborgindex",
         Type = typeof(OrganisationRecord),
-        Fields = new List<DbField>
-        {
+        Fields = new() {
             FieldFor<OrganisationRecord, int>(o => o.Id, "orgid", "Primary key", "int"),
             FieldFor<OrganisationRecord, string>(o => o.Name, "orgname", "Name of the organisation", "varchar", 500),
             FieldFor<OrganisationRecord, string>(o => o.Guid, "orgguid", "Unique identifier for organisation", "varchar", 45),
@@ -35,8 +34,7 @@ public static class TableDefinitions
         Name = "Member",
         DbName = "members",
         Type = typeof(MemberRecord),
-        Fields = new List<DbField>
-        {
+        Fields = new() {
             FieldFor<MemberRecord, int>(m => m.Id, "id", "Primary key", "int"),
             FieldFor<MemberRecord, string>(m => m.Username, "username", "Username (Same as Email)", "varchar", 65),
             FieldFor<MemberRecord, string>(m => m.Password, "password", "Hashed password", "varchar", 65),
@@ -65,8 +63,7 @@ public static class TableDefinitions
         Name = "UserJourney",
         DbName = "userjourney",
         Type = typeof(UserJourneyRecord),
-        Fields = new List<DbField>
-        {
+        Fields = new() {
             FieldFor<UserJourneyRecord, int>(u => u.UserJourneyId, "ujid", "Primary key", "int"),
             FieldFor<UserJourneyRecord, string>(u => u.Username, "username", "Username", "varchar", 500),
             FieldFor<UserJourneyRecord, string>(u => u.CurrentState, "curstate", "Current state", "varchar", 100),
@@ -103,8 +100,7 @@ public static class TableDefinitions
         Name = "MemberOptions",
         DbName = "memberoptions",
         Type = typeof(MemberOptionsRecord),
-        Fields = new List<DbField>
-        {
+        Fields = new() {
             FieldFor<MemberOptionsRecord, int>(m => m.MemberId, "id", "Primary key", "int"),
             FieldFor<MemberOptionsRecord, string?>(m => m.SubscriptionCode, "subtype", "Subscription type", "varchar", 45),
             FieldFor<MemberOptionsRecord, bool>(m => m.WeeklyEmail, "weeklyemail", "Weekly email enabled", "tinyint"),
@@ -118,15 +114,31 @@ public static class TableDefinitions
             FieldFor<MemberOptionsRecord, string?>(m => m.LanguageList, "langlist", "Preferred language(s)", "varchar", 30)
         }
     };
-    
+
+    public static readonly DbTable SavedSearchTable = new() {
+        Name = "SavedSearch",
+        DbName = "search",
+        Type = typeof(AdminApi.DTO.SavedSearchRecord),
+        Fields = new() {
+            FieldFor<AdminApi.DTO.SavedSearchRecord, int>(s => s.Id, "searchid", "Primary key", "int"),
+            FieldFor<AdminApi.DTO.SavedSearchRecord, int>(s => s.MemberId, "userid", "Member id", "int"),
+            FieldFor<AdminApi.DTO.SavedSearchRecord, string>(s => s.SearchJson, "json", "Search JSON", "text", 65535),
+            FieldFor<AdminApi.DTO.SavedSearchRecord, string>(s => s.SearchName, "searchname", "Search name", "varchar",
+                45),
+            FieldFor<AdminApi.DTO.SavedSearchRecord, bool>(s => s.Alert, "alert", "Alert flag", "tinyint"),
+            FieldFor<AdminApi.DTO.SavedSearchRecord, DateTime?>(s => s.LastRun, "lastrun", "Last run", "datetime"),
+            FieldFor<AdminApi.DTO.SavedSearchRecord, DateTime?>(s => s.InsertTime, "inserttime", "Inserted at",
+                "datetime")
+        }
+    };
+   
     private static DbField FieldFor<T, TProp>(Expression<Func<T, TProp>> expr,
         string fieldName, string description, string fieldType, int? maxLength = null)
     {
         if (expr.Body is not MemberExpression member)
             throw new ArgumentException("Expression must be a member access", nameof(expr));
 
-        return new DbField
-        {
+        return new() {
             Name = member.Member.Name,
             DbName = fieldName,
             Description = description,

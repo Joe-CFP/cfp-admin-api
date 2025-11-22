@@ -54,8 +54,7 @@ public partial class DatabaseRepository
         List<string> emailErrorDays = await GetStringDatesFromDatabase(connection, errorSql, new { orgId });
         List<string> tenderNinjaDays = await GetStringDatesFromDatabase(connection, ninjaSql, new { orgId });
 
-        return new MemberActivity
-        {
+        return new() {
             LoginDays = loginDays,
             EmailDays = emailDays,
             EmailErrorDays = emailErrorDays,
