@@ -1,12 +1,13 @@
 ﻿using AdminApi.Entities;
 using AdminApi.Repositories;
+using AdminApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AdminApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class MembersController(IDatabaseRepository db) : ControllerBase
+public class MembersController(IDatabaseRepository db, ISavedSearchService savedSearches) : ControllerBase
 {
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
@@ -47,7 +48,7 @@ public class MembersController(IDatabaseRepository db) : ControllerBase
     [HttpGet("{id:int}/saved-searches")]
     public async Task<IActionResult> GetSavedSearches(int id)
     {
-        IEnumerable<SavedSearch> searches = await db.GetSavedSearchesByMemberIdAsync(id);
+        IEnumerable<SavedSearch> searches = await savedSearches.GetSavedSearchesByMemberIdAsync(id, HttpContext.RequestAborted);
         return Ok(searches);
     }
 }

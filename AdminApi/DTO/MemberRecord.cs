@@ -6,7 +6,6 @@ public class MemberRecord
 {
     public int Id { get; set; }
     public string Username { get; set; }
-    public string Password { get; set; }
     public string Email { get; set; }
     public bool IsVerified { get; set; }
     public DateTime ModificationDate { get; set; }
@@ -15,7 +14,6 @@ public class MemberRecord
     public string Address { get; set; }
     public string Postcode { get; set; }
     public string RegisterCode { get; set; }
-    public string PasswordCode { get; set; }
     public string StripeCustomerId { get; set; }
     public string StripeSubscriptionId { get; set; }
     public string StripePlanIdLegacy { get; set; }

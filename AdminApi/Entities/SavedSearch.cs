@@ -13,8 +13,11 @@ public class SavedSearch
     public string? ValueMin { get; set; }
     public string? ValueMax { get; set; }
     public List<string>? Regions { get; set; }
-    public List<string>? Fields { get; set; }
+    public List<string> Fields { get; set; } = null!;
     public bool Alert { get; set; }
     public DateTime? LastRun { get; set; }
     public DateTime? CreatedAt { get; set; }
+    public long CurrentTotal { get; set; }
+    public long LastYearTotal { get; set; }
+    public long FiveYearTotal { get; set; }
 }

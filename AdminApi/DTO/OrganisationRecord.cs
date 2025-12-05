@@ -19,6 +19,9 @@ public class OrganisationRecord
     public string DataResidency { get; set; }
     public bool HasBidEvaluationModule { get; set; }
     public bool HasClaudeModule { get; set; }
+    public bool HasSharePointModule { get; set; }
+    public bool HasLabsModule { get; set; }
+    public bool HasBetaModule { get; set; }
 
     public Organisation ToOrganisation(List<MemberPreview>? members)
     {

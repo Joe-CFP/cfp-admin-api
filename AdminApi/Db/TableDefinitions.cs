@@ -25,7 +25,10 @@ public static class TableDefinitions
             FieldFor<OrganisationRecord, int>(o => o.Version, "version", "Data version or schema version", "int"),
             FieldFor<OrganisationRecord, string>(o => o.DataResidency, "dataresidencystring", "Data residency (global, eu, or uk)", "varchar", 60),
             FieldFor<OrganisationRecord, bool>(o => o.HasBidEvaluationModule, "mod_be", "Whether Bid Evaluation module is enabled", "tinyint"),
-            FieldFor<OrganisationRecord, bool>(o => o.HasClaudeModule, "mod_claude", "Whether Claude module is enabled", "tinyint")
+            FieldFor<OrganisationRecord, bool>(o => o.HasClaudeModule, "mod_claude", "Whether Claude module is enabled", "tinyint"),
+            FieldFor<OrganisationRecord, bool>(o => o.HasSharePointModule, "mod_sp", "Whether SharePoint module is enabled", "tinyint"),
+            FieldFor<OrganisationRecord, bool>(o => o.HasLabsModule, "mod_labs", "Whether Labs module is enabled", "tinyint"),
+            FieldFor<OrganisationRecord, bool>(o => o.HasBetaModule, "mod_beta", "Whether Beta features are enabled", "tinyint"),
         }
     };
 
@@ -37,7 +40,6 @@ public static class TableDefinitions
         Fields = new() {
             FieldFor<MemberRecord, int>(m => m.Id, "id", "Primary key", "int"),
             FieldFor<MemberRecord, string>(m => m.Username, "username", "Username (Same as Email)", "varchar", 65),
-            FieldFor<MemberRecord, string>(m => m.Password, "password", "Hashed password", "varchar", 65),
             FieldFor<MemberRecord, string>(m => m.Email, "email", "Email address", "varchar", 65),
             FieldFor<MemberRecord, bool>(m => m.IsVerified, "verified", "Whether account is verified", "tinyint"),
             FieldFor<MemberRecord, DateTime>(m => m.ModificationDate, "mod_timestamp", "Last modified timestamp", "datetime"),
@@ -46,7 +48,6 @@ public static class TableDefinitions
             FieldFor<MemberRecord, string>(m => m.Address, "address", "Postal address", "varchar", 200),
             FieldFor<MemberRecord, string>(m => m.Postcode, "postcode", "Postal code", "varchar", 45),
             FieldFor<MemberRecord, string>(m => m.RegisterCode, "registercode", "Registration verification code", "varchar", 100),
-            FieldFor<MemberRecord, string>(m => m.PasswordCode, "passwordcode", "Password reset code", "varchar", 100),
             FieldFor<MemberRecord, string>(m => m.StripeCustomerId, "custid", "Stripe customer ID", "varchar", 100),
             FieldFor<MemberRecord, string>(m => m.StripeSubscriptionId, "subid", "Stripe Subscription ID", "varchar", 100),
             FieldFor<MemberRecord, string>(m => m.StripePlanIdLegacy, "planid", "Stripe Plan ID - No longer in use", "varchar", 100),
@@ -54,7 +55,7 @@ public static class TableDefinitions
             FieldFor<MemberRecord, DateTime>(m => m.LoginExpiryDate, "login_expiry", "Login expiry timestamp", "datetime"),
             FieldFor<MemberRecord, string>(m => m.ReferralCode, "refercode", "Referral code", "varchar", 100),
             FieldFor<MemberRecord, bool>(m => m.InRegister, "inregister", "???", "tinyint"),
-            FieldFor<MemberRecord, string>(m => m.OrganisationGuid, "orgguid", "Organisation", "varchar", 45)
+            FieldFor<MemberRecord, string>(m => m.OrganisationGuid, "orgguid", "Organisation", "varchar", 45),
         }
     };
 
@@ -91,7 +92,7 @@ public static class TableDefinitions
             FieldFor<UserJourneyRecord, string>(u => u.Action17, "action17", "Action 17", "varchar", 500),
             FieldFor<UserJourneyRecord, string>(u => u.Action18, "action18", "Action 18", "varchar", 500),
             FieldFor<UserJourneyRecord, string>(u => u.Action19, "action19", "Action 19", "varchar", 500),
-            FieldFor<UserJourneyRecord, string>(u => u.Action20, "action20", "Action 20", "varchar", 500)
+            FieldFor<UserJourneyRecord, string>(u => u.Action20, "action20", "Action 20", "varchar", 500),
         }
     }; 
 
@@ -111,7 +112,7 @@ public static class TableDefinitions
             FieldFor<MemberOptionsRecord, string?>(m => m.Cc2, "cc2", "Additional email recipient 2", "varchar", 200),
             FieldFor<MemberOptionsRecord, string?>(m => m.Cc3, "cc3", "Additional email recipient 3", "varchar", 200),
             FieldFor<MemberOptionsRecord, string?>(m => m.Cc4, "cc4", "Additional email recipient 4", "varchar", 200),
-            FieldFor<MemberOptionsRecord, string?>(m => m.LanguageList, "langlist", "Preferred language(s)", "varchar", 30)
+            FieldFor<MemberOptionsRecord, string?>(m => m.LanguageList, "langlist", "Preferred language(s)", "varchar", 30),
         }
     };
 
@@ -128,7 +129,7 @@ public static class TableDefinitions
             FieldFor<AdminApi.DTO.SavedSearchRecord, bool>(s => s.Alert, "alert", "Alert flag", "tinyint"),
             FieldFor<AdminApi.DTO.SavedSearchRecord, DateTime?>(s => s.LastRun, "lastrun", "Last run", "datetime"),
             FieldFor<AdminApi.DTO.SavedSearchRecord, DateTime?>(s => s.InsertTime, "inserttime", "Inserted at",
-                "datetime")
+                "datetime"),
         }
     };
    
