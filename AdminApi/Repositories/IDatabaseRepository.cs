@@ -1,4 +1,5 @@
-﻿using AdminApi.Entities;
+﻿using AdminApi.DTO;
+using AdminApi.Entities;
 
 namespace AdminApi.Repositories;
 
@@ -13,4 +14,5 @@ public interface IDatabaseRepository
     Task<MemberActivity> GetOrganisationMemberActivityAsync(int orgId);
     Task<MemberPreview?> GetMemberPreviewByEmailAsync(string email);
     Task<IEnumerable<SavedSearch>> GetSavedSearchesByMemberIdAsync(int id);
+    Task<MemberSecurityRecord?> GetMemberSecurityRecordByEmailAsync(string email);
 }
