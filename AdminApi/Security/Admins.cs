@@ -2,10 +2,10 @@
 
 public static class Admins
 {
-    private static readonly HashSet<string> Emails = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> Emails = new(StringComparer.OrdinalIgnoreCase)
     {
-        "replace-with-real-admin@example.com"
+        "joe.simpson+admin@contractfinderpro.com",
     };
 
-    public static bool IsAllowed(string email) => Emails.Contains(email);
+    public static bool IsAdmin(string email) => Emails.Contains(email);
 }

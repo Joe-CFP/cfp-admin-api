@@ -8,37 +8,29 @@ namespace AdminApi.Controllers;
 [ApiController]
 [Route("api")]
 [AllowAnonymous]
-public class AuthController(JwtTokenService tokens, ISecurityService passwords) : ControllerBase
+public class AuthController(JwtTokenService tokens, ISecurityService security) : ControllerBase
 {
     [HttpPost("token")]
-    public async Task<IActionResult> Token([FromBody] TokenRequest? request)
+    [Consumes("application/x-www-form-urlencoded")]
+    public async Task<IActionResult> Token([FromForm] TokenRequest request)
     {
-        string? email = request?.email;
-        string? password = request?.password;
+        if (!string.Equals(request.grant_type, "password", StringComparison.Ordinal))
+            return BadRequest("Unsupported grant_type.");
 
-        if (Request.HasFormContentType)
-        {
-            IFormCollection form = await Request.ReadFormAsync();
-            email ??= form["email"].ToString();
-            email = string.IsNullOrWhiteSpace(email) ? null : email;
-            password ??= form["password"].ToString();
-            password = string.IsNullOrWhiteSpace(password) ? null : password;
-        }
+        if (string.IsNullOrWhiteSpace(request.username) || string.IsNullOrWhiteSpace(request.password))
+            return BadRequest("Username and password are required.");
 
-        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
-            return BadRequest("Email and password are required.");
-
-        if (!Admins.IsAllowed(email))
+        if (!Admins.IsAdmin(request.username))
             return Unauthorized("Invalid credentials.");
 
-        if (!await passwords.VerifyPasswordAsync(email, password))
+        if (!await security.VerifyPasswordAsync(request.username, request.password))
             return Unauthorized("Invalid credentials.");
 
-        (string token, DateTimeOffset expiresUtc) = tokens.CreateAdminToken(email);
+        (string token, DateTimeOffset expiresUtc) = tokens.CreateAdminToken(request.username);
         int expiresIn = (int)Math.Max(0, (expiresUtc - DateTimeOffset.UtcNow).TotalSeconds);
 
         return Ok(new { access_token = token, token_type = "Bearer", expires_in = expiresIn });
     }
 
-    public sealed record TokenRequest(string? email, string? password);
+    public sealed record TokenRequest(string? username, string? password, string? grant_type, string? ip);
 }
