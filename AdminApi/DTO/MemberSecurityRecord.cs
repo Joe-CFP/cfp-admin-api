@@ -2,6 +2,7 @@
 
 public sealed class MemberSecurityRecord
 {
+    public int Id { get; init; }
     public string Username { get; init; } = string.Empty;
     public string HashedPassword { get; init; } = string.Empty;
     public DateTime LoginExpiry { get; init; }

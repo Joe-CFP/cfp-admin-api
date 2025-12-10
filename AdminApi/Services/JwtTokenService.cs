@@ -16,16 +16,18 @@ public sealed class JwtTokenService
         _signingCredentials = new SigningCredentials(new SymmetricSecurityKey(keyBytes), SecurityAlgorithms.HmacSha256);
     }
 
-    public (string Token, DateTimeOffset ExpiresUtc) CreateAdminToken(string email)
+    public (string Token, DateTimeOffset ExpiresUtc) CreateAdminToken(int memberId, string username, string firstName, string lastName)
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;
-        DateTimeOffset expires = now.AddHours(1);
+        DateTimeOffset expires = now.AddMinutes(1);
 
         Claim[] claims =
         [
-            new Claim(JwtRegisteredClaimNames.Sub, email),
-            new Claim(ClaimTypes.Email, email),
-            new Claim(ClaimTypes.Name, email),
+            new Claim(JwtRegisteredClaimNames.Sub, memberId.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, memberId.ToString()),
+            new Claim(ClaimTypes.Name, username),
+            new Claim(ClaimTypes.GivenName, firstName),
+            new Claim(ClaimTypes.Surname, lastName),
             new Claim(ClaimTypes.Role, "admin")
         ];
 

@@ -14,5 +14,10 @@ public interface IDatabaseRepository
     Task<MemberActivity> GetOrganisationMemberActivityAsync(int orgId);
     Task<MemberPreview?> GetMemberPreviewByEmailAsync(string email);
     Task<IEnumerable<SavedSearch>> GetSavedSearchesByMemberIdAsync(int id);
-    Task<MemberSecurityRecord?> GetMemberSecurityRecordByEmailAsync(string email);
+    Task<MemberSecurityRecord?> GetMemberSecurityRecordByUsernameAsync(string username);
+    Task<MemberSecurityRecord?> GetMemberSecurityRecordByIdAsync(int memberId);
+    Task InsertLoginHistoryAsync(int memberId, string loginIp, string loginUrl, string referCode, CancellationToken cancellationToken);
+    Task InsertRefreshTokenAsync(int memberId, string tokenHash, DateTime createdUtc, DateTime expiresUtc, CancellationToken cancellationToken);
+    Task<RefreshTokenRecord?> GetRefreshTokenByHashAsync(string tokenHash, CancellationToken cancellationToken);
+    Task<bool> RotateRefreshTokenAsync(int refreshTokenId, string tokenHash, DateTime revokedUtc, string newTokenHash, int memberId, DateTime createdUtc, DateTime expiresUtc, CancellationToken cancellationToken);
 }

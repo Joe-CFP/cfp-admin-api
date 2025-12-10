@@ -6,21 +6,21 @@ namespace AdminApi.Services;
 
 public interface ISecurityService
 {
-    Task<bool> VerifyPasswordAsync(string email, string password);
+    Task<MemberSecurityRecord?> AuthenticateAsync(string username, string password);
 }
 
 public sealed class SecurityService(IDatabaseRepository db) : ISecurityService
 {
-    public async Task<bool> VerifyPasswordAsync(string email, string password)
+    public async Task<MemberSecurityRecord?> AuthenticateAsync(string username, string password)
     {
-        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password)) return false;
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password)) return null;
 
-        MemberSecurityRecord? member = await db.GetMemberSecurityRecordByEmailAsync(email);
-        if (member is null) return false;
-        if (string.IsNullOrEmpty(member.HashedPassword)) return false;
+        MemberSecurityRecord? member = await db.GetMemberSecurityRecordByUsernameAsync(username);
+        if (member is null) return null;
+        if (string.IsNullOrEmpty(member.HashedPassword)) return null;
 
         bool passwordCorrect = Crypter.CheckPassword(password, member.HashedPassword);
         bool loginNotExpired = DateTime.Now.Date <= member.LoginExpiry.Date;
-        return passwordCorrect && loginNotExpired;
+        return passwordCorrect && loginNotExpired ? member : null;
     }
 }
