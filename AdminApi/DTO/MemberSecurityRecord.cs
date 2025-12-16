@@ -8,4 +8,6 @@ public sealed class MemberSecurityRecord
     public DateTime LoginExpiry { get; init; }
     public string FirstName { get; init; } = string.Empty;
     public string LastName { get; init; } = string.Empty;
+    public bool IsAdmin { get; init; }
+    public string TotpSecret { get; init; } = string.Empty;
 }

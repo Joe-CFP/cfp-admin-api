@@ -1,4 +1,4 @@
-﻿using AdminApi.DTO;
+using AdminApi.DTO;
 using Dapper;
 using MySql.Data.MySqlClient;
 
@@ -12,7 +12,8 @@ public partial class DatabaseRepository
 
         const string sql =
             "SELECT m.id Id, m.username Username, m.password HashedPassword, " +
-            "m.login_expiry LoginExpiry, m.firstname FirstName, m.lastname LastName " +
+            "m.login_expiry LoginExpiry, m.firstname FirstName, m.lastname LastName, " +
+            "m.isadmin IsAdmin, m.totpsecret TotpSecret " +
             "FROM members m WHERE m.username = @Username LIMIT 2";
 
         MemberSecurityRecord[] members =
@@ -26,7 +27,9 @@ public partial class DatabaseRepository
         await using MySqlConnection connection = new(ConnectionString);
 
         const string sql =
-            "SELECT m.id Id, m.username Username, m.password HashedPassword, m.login_expiry LoginExpiry, m.firstname FirstName, m.lastname LastName " +
+            "SELECT m.id Id, m.username Username, m.password HashedPassword, " +
+            "m.login_expiry LoginExpiry, m.firstname FirstName, m.lastname LastName, " +
+            "m.isadmin IsAdmin, m.totpsecret TotpSecret " +
             "FROM members m WHERE m.id = @MemberId LIMIT 1";
 
         return await connection.QueryFirstOrDefaultAsync<MemberSecurityRecord>(sql, new { MemberId = memberId });
@@ -48,8 +51,8 @@ public partial class DatabaseRepository
 
         await connection.ExecuteAsync(cmd);
     }
-    
-        public async Task InsertRefreshTokenAsync(int memberId, string tokenHash, DateTime createdUtc, DateTime expiresUtc, CancellationToken cancellationToken)
+
+    public async Task InsertRefreshTokenAsync(int memberId, string tokenHash, DateTime createdUtc, DateTime expiresUtc, CancellationToken cancellationToken)
     {
         await using MySqlConnection connection = new(ConnectionString);
 
@@ -116,5 +119,61 @@ public partial class DatabaseRepository
 
         tx.Commit();
         return true;
+    }
+
+    public async Task InsertMfaChallengeAsync(int memberId, string mfaTokenHash, DateTime createdUtc, DateTime expiresUtc, string loginIp, CancellationToken cancellationToken)
+    {
+        await using MySqlConnection connection = new(ConnectionString);
+
+        const string sql =
+            "INSERT INTO mfachallenges (memberid, mfatokenhash, created_utc, expires_utc, verified_utc, failedattempts, lastattempt_utc, loginip) " +
+            "VALUES (@MemberId, @MfaTokenHash, @CreatedUtc, @ExpiresUtc, NULL, 0, NULL, @LoginIp)";
+
+        CommandDefinition cmd = new(sql,
+            new { MemberId = memberId, MfaTokenHash = mfaTokenHash, CreatedUtc = createdUtc, ExpiresUtc = expiresUtc, LoginIp = loginIp },
+            cancellationToken: cancellationToken
+        );
+
+        await connection.ExecuteAsync(cmd);
+    }
+
+    public async Task<MfaChallengeRecord?> GetMfaChallengeByHashAsync(string mfaTokenHash, CancellationToken cancellationToken)
+    {
+        await using MySqlConnection connection = new(ConnectionString);
+
+        const string sql =
+            "SELECT id Id, memberid MemberId, mfatokenhash MfaTokenHash, created_utc CreatedUtc, expires_utc ExpiresUtc, verified_utc VerifiedUtc, failedattempts FailedAttempts, lastattempt_utc LastAttemptUtc, loginip LoginIp " +
+            "FROM mfachallenges WHERE mfatokenhash = @MfaTokenHash LIMIT 1";
+
+        CommandDefinition cmd = new(sql, new { MfaTokenHash = mfaTokenHash }, cancellationToken: cancellationToken);
+        return await connection.QueryFirstOrDefaultAsync<MfaChallengeRecord>(cmd);
+    }
+
+    public async Task<bool> IncrementMfaChallengeFailedAttemptsAsync(int id, DateTime lastAttemptUtc, CancellationToken cancellationToken)
+    {
+        await using MySqlConnection connection = new(ConnectionString);
+
+        const string sql =
+            "UPDATE mfachallenges " +
+            "SET failedattempts = failedattempts + 1, lastattempt_utc = @LastAttemptUtc " +
+            "WHERE id = @Id AND verified_utc IS NULL";
+
+        CommandDefinition cmd = new(sql, new { Id = id, LastAttemptUtc = lastAttemptUtc }, cancellationToken: cancellationToken);
+        int updated = await connection.ExecuteAsync(cmd);
+        return updated == 1;
+    }
+
+    public async Task<bool> MarkMfaChallengeVerifiedAsync(int id, DateTime verifiedUtc, CancellationToken cancellationToken)
+    {
+        await using MySqlConnection connection = new(ConnectionString);
+
+        const string sql =
+            "UPDATE mfachallenges " +
+            "SET verified_utc = @VerifiedUtc " +
+            "WHERE id = @Id AND verified_utc IS NULL";
+
+        CommandDefinition cmd = new(sql, new { Id = id, VerifiedUtc = verifiedUtc }, cancellationToken: cancellationToken);
+        int updated = await connection.ExecuteAsync(cmd);
+        return updated == 1;
     }
 }
