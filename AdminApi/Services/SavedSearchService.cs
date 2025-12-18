@@ -15,12 +15,51 @@ public class SavedSearchService(IDatabaseRepository db, IOpenSearchRepository os
         List<SavedSearch> items = (await db.GetSavedSearchesByMemberIdAsync(memberId)).ToList();
         IEnumerable<Task> tasks = items.Select(async s =>
         {
-            (long cur, long last, long five) = await os.GetCountsAsync(s, ct);
-            s.CurrentTotal = cur;
-            s.LastYearTotal = last;
-            s.FiveYearTotal = five;
+            Task<long> curTask = CountVariantAsync(s, SavedSearchCountVariant.Current, ct);
+            Task<long> lastTask = CountVariantAsync(s, SavedSearchCountVariant.PastOneYear, ct);
+            Task<long> fiveTask = CountVariantAsync(s, SavedSearchCountVariant.PastFiveYears, ct);
+
+            await Task.WhenAll(curTask, lastTask, fiveTask);
+
+            s.CurrentTotal = curTask.Result;
+            s.LastYearTotal = lastTask.Result;
+            s.FiveYearTotal = fiveTask.Result;
         });
         await Task.WhenAll(tasks);
         return items;
+    }
+
+    private enum SavedSearchCountVariant
+    {
+        Current = 1,
+        PastOneYear = 2,
+        PastFiveYears = 3
+    }
+
+    private Task<long> CountVariantAsync(SavedSearch saved, SavedSearchCountVariant variant, CancellationToken ct)
+    {
+        DateTime now = DateTime.UtcNow;
+
+        (DateTime? fromUtc, DateTime? toUtc) range = variant switch {
+            SavedSearchCountVariant.Current => (new DateTime(now.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc), now),
+            SavedSearchCountVariant.PastOneYear => (now.AddYears(-1), now),
+            SavedSearchCountVariant.PastFiveYears => (now.AddYears(-5), now),
+            _ => (null, null)
+        };
+
+        SearchSpec spec = saved.Spec with {
+            PublishedFromUtc = range.fromUtc,
+            PublishedToUtc = range.toUtc,
+            ClosingOnOrAfterUtc = ShouldExcludeCurrentlyClosed(saved, variant) ? now.Date : null
+        };
+
+        return os.CountAsync(spec, ct);
+    }
+
+    private static bool ShouldExcludeCurrentlyClosed(SavedSearch saved, SavedSearchCountVariant variant)
+    {
+        if (variant != SavedSearchCountVariant.Current) return false;
+        if (saved.Spec.Types is null) return false;
+        return saved.Spec.Types.Contains(NoticeType.Pin);
     }
 }

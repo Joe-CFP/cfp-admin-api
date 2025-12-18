@@ -19,6 +19,7 @@
 
     <ItemGroup>
       <Folder Include="Db\Tables\" />
+      <Folder Include="Search\" />
     </ItemGroup>
 
 </Project>

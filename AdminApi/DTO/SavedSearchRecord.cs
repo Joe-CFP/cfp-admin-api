@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Globalization;
+using System.Text.Json;
 using AdminApi.Entities;
 using AdminApi.Legacy;
 
@@ -36,23 +37,79 @@ public class SavedSearchRecord
             return d;
         }
 
+        SearchSpec spec = BuildSpec(p);
+
         return new() {
             Id = Id,
             MemberId = MemberId,
             Name = SearchName ?? p?.Name ?? "",
-            Query = p?.Query ?? "",
-            OrderBy = p?.OrderBy,
-            Type = p?.TypeInt,
-            DateFrom = Normalize(p?.MinDate),
-            DateTo = Normalize(p?.MaxDate),
-            ValueMin = p?.MinValueStr,
-            ValueMax = p?.MaxValueStr,
-            Regions = p?.Nuts?.ToList(),
-            Fields = p?.ShortFields?.ToList(),
             Alert = Alert,
             LastRun = Normalize(LastRun),
-            CreatedAt = Normalize(InsertTime)
+            CreatedAt = Normalize(InsertTime),
+            Spec = spec
         };
+    }
+
+    private static SearchSpec BuildSpec(SavedSearchPayload? p)
+    {
+        IndexKind index = DetermineIndex(p?.Nuts);
+
+        string? term = p?.Query;
+        SearchFieldSet? fieldSet = string.IsNullOrWhiteSpace(term) ? null : SearchFieldSet.Default;
+
+        IReadOnlyList<NoticeType>? types = null;
+        if (p?.TypeInt is not null && Enum.IsDefined(typeof(NoticeType), p.TypeInt.Value))
+            types = new[] { (NoticeType)p.TypeInt.Value };
+
+        IReadOnlyList<string>? regions = p?.Nuts?.Where(r => !string.IsNullOrWhiteSpace(r)).ToArray();
+
+        decimal? min = TryParseDecimal(p?.MinValueStr, out decimal parsedMin) ? parsedMin : null;
+        decimal? max = TryParseDecimalUpper(p?.MaxValueStr, out decimal parsedMax) ? parsedMax : null;
+
+        return new SearchSpec(
+            Index: index,
+            Term: term,
+            TermFieldSet: fieldSet,
+            TermFields: null,
+            Types: types,
+            Regions: regions,
+            PublishedFromUtc: null,
+            PublishedToUtc: null,
+            ClosingOnOrAfterUtc: null,
+            ValueMin: min,
+            ValueMax: max,
+            OrderBy: null,
+            PageSize: null
+        );
+    }
+
+    private static IndexKind DetermineIndex(string[]? nuts)
+    {
+        if (nuts is null || nuts.Length == 0) return IndexKind.Uk;
+
+        bool global = nuts.Any(r =>
+            string.Equals(r, "eu", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(r, "os", StringComparison.OrdinalIgnoreCase));
+
+        return global ? IndexKind.Global : IndexKind.Uk;
+    }
+
+    private static bool TryParseDecimal(string? value, out decimal result)
+    {
+        result = 0m;
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        string trimmed = value.Trim();
+        if (string.Equals(trimmed, "max", StringComparison.OrdinalIgnoreCase)) return false;
+        return decimal.TryParse(trimmed, NumberStyles.Any, CultureInfo.InvariantCulture, out result);
+    }
+
+    private static bool TryParseDecimalUpper(string? value, out decimal result)
+    {
+        result = 0m;
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        string trimmed = value.Trim();
+        if (string.Equals(trimmed, "max", StringComparison.OrdinalIgnoreCase)) return false;
+        return decimal.TryParse(trimmed, NumberStyles.Any, CultureInfo.InvariantCulture, out result);
     }
 
     class SavedSearchPayload
