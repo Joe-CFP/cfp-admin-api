@@ -1,5 +1,6 @@
 ﻿using AdminApi.Entities;
 using AdminApi.Lib;
+using AdminApi.Services;
 using OpenSearch.Client;
 
 namespace AdminApi.Repositories;
@@ -12,9 +13,14 @@ public interface IOpenSearchRepository
 public class OpenSearchRepository : IOpenSearchRepository
 {
     private readonly OpenSearchClient _client;
+    private readonly IQueryParsingService _queryParser;
+    private readonly IOpenSearchQueryCompiler _queryCompiler;
 
-    public OpenSearchRepository(ISecretStore secrets)
+    public OpenSearchRepository(ISecretStore secrets, IQueryParsingService queryParser, IOpenSearchQueryCompiler queryCompiler)
     {
+        _queryParser = queryParser;
+        _queryCompiler = queryCompiler;
+
         Secret os = secrets[SecretName.ProdCoreOpensearch];
         ConnectionSettings settings = new ConnectionSettings(new Uri(os.Endpoint))
             .BasicAuthentication(os.Username, os.Password)
@@ -40,17 +46,17 @@ public class OpenSearchRepository : IOpenSearchRepository
         return response.Count;
     }
 
-    private static QueryContainer BuildQuery(QueryContainerDescriptor<object> q, SearchSpec spec)
+    private QueryContainer BuildQuery(QueryContainerDescriptor<object> q, SearchSpec spec)
     {
         QueryContainer query = q.MatchAll();
 
-        if (!string.IsNullOrWhiteSpace(spec.Term))
+        if (!string.IsNullOrWhiteSpace(spec.Query))
         {
             string[] fields = ResolveTermFields(spec);
-            query &= q.SimpleQueryString(s => s
-                .Query(spec.Term)
-                .DefaultOperator(Operator.Or)
-                .Fields(f => ApplyFields(f, fields)));
+            ParsedQuery parsed = _queryParser.Parse(spec.Query);
+
+            if (parsed.ExpressionTree is not null)
+                query &= _queryCompiler.Compile(parsed.ExpressionTree, fields);
         }
 
         if (spec.PublishedFromUtc is not null || spec.PublishedToUtc is not null)
@@ -76,12 +82,12 @@ public class OpenSearchRepository : IOpenSearchRepository
 
     private static string[] ResolveTermFields(SearchSpec spec)
     {
-        if (spec.TermFields is { Count: > 0 })
-            return spec.TermFields.Select(ToOsFieldName).ToArray();
+        if (spec.QueryFields is { Count: > 0 })
+            return spec.QueryFields.Select(ToOsFieldName).ToArray();
 
-        SearchFieldSet set = spec.TermFieldSet ?? SearchFieldSet.Default;
+        QueryFieldSet set = spec.QueryFieldSet ?? QueryFieldSet.Default;
         return set switch {
-            SearchFieldSet.Default => new[] { "summary", "reftitleshort", "publisher", "awardedtofirstlines", "cpvdesc", "cpvcodes", "location" },
+            QueryFieldSet.Default => new[] { "summary", "reftitleshort", "publisher", "awardedtofirstlines", "cpvdesc", "cpvcodes", "location" },
             _ => new[] { "summary", "reftitleshort", "publisher", "awardedtofirstlines", "cpvdesc", "cpvcodes", "location" }
         };
     }
@@ -98,13 +104,6 @@ public class OpenSearchRepository : IOpenSearchRepository
             SearchField.Location => "location",
             _ => "summary"
         };
-    }
-
-    private static FieldsDescriptor<object> ApplyFields(FieldsDescriptor<object> fields, IReadOnlyList<string> names)
-    {
-        foreach (string n in names)
-            fields = fields.Field(n);
-        return fields;
     }
 
     private static DateRangeQueryDescriptor<object> ApplyDateRange(

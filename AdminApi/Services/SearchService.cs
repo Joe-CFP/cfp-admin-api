@@ -20,7 +20,7 @@ public class SearchBuilder
 
     private bool _searchForSet;
     private string? _term;
-    private SearchFieldSet? _termFieldSet;
+    private QueryFieldSet? _termFieldSet;
     private IReadOnlyList<SearchField>? _termFields;
 
     private bool _typeSet;
@@ -53,10 +53,10 @@ public class SearchBuilder
 
     public SearchBuilder SearchFor(string term)
     {
-        return SearchFor(term, SearchFieldSet.Default);
+        return SearchFor(term, QueryFieldSet.Default);
     }
 
-    public SearchBuilder SearchFor(string term, SearchFieldSet fieldSet)
+    public SearchBuilder SearchFor(string term, QueryFieldSet fieldSet)
     {
         if (_searchForSet) throw new InvalidOperationException("SearchFor can only be called once.");
         if (string.IsNullOrWhiteSpace(term)) throw new ArgumentException("Term is required.", nameof(term));
@@ -177,9 +177,9 @@ public class SearchBuilder
 
         return new SearchSpec(
             Index: _index,
-            Term: _term,
-            TermFieldSet: _termFieldSet,
-            TermFields: _termFields,
+            Query: _term,
+            QueryFieldSet: _termFieldSet,
+            QueryFields: _termFields,
             Types: _types,
             Regions: _regions,
             PublishedFromUtc: publishedFrom,

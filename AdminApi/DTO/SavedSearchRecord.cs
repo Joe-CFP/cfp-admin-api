@@ -54,23 +54,35 @@ public class SavedSearchRecord
     {
         IndexKind index = DetermineIndex(p?.Nuts);
 
-        string? term = p?.Query;
-        SearchFieldSet? fieldSet = string.IsNullOrWhiteSpace(term) ? null : SearchFieldSet.Default;
+        QueryFieldSet? fieldSet = string.IsNullOrWhiteSpace(p?.Query) ? null : QueryFieldSet.Default;
 
         IReadOnlyList<NoticeType>? types = null;
-        if (p?.TypeInt is not null && Enum.IsDefined(typeof(NoticeType), p.TypeInt.Value))
-            types = new[] { (NoticeType)p.TypeInt.Value };
+        if (p?.TypeInt is not null)
+        {
+            if (p.TypeInt.Value == (int)NoticeType.Tender)
+                types = new[] { NoticeType.Tender, NoticeType.Pin };
+            else if (Enum.IsDefined(typeof(NoticeType), p.TypeInt.Value))
+                types = new[] { (NoticeType)p.TypeInt.Value };
+        }
 
-        IReadOnlyList<string>? regions = p?.Nuts?.Where(r => !string.IsNullOrWhiteSpace(r)).ToArray();
+        IReadOnlyList<string>? regions = null;
+        if (p?.Nuts is not null && p.Nuts.Length > 0)
+        {
+            regions = p.Nuts
+                .Where(r => !string.IsNullOrWhiteSpace(r))
+                .Append("u")
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
 
         decimal? min = TryParseDecimal(p?.MinValueStr, out decimal parsedMin) ? parsedMin : null;
         decimal? max = TryParseDecimalUpper(p?.MaxValueStr, out decimal parsedMax) ? parsedMax : null;
 
-        return new SearchSpec(
+        return new(
             Index: index,
-            Term: term,
-            TermFieldSet: fieldSet,
-            TermFields: null,
+            Query: p?.Query,
+            QueryFieldSet: fieldSet,
+            QueryFields: null,
             Types: types,
             Regions: regions,
             PublishedFromUtc: null,

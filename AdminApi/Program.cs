@@ -66,9 +66,11 @@ builder.Services.AddAuthorization(o => {
         .Build();
 });
 
+builder.Services.AddSingleton<IQueryParsingService, QueryParsingService>();
+builder.Services.AddSingleton<IOpenSearchQueryCompiler, OpenSearchQueryCompiler>();
+
 builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddSingleton<IOpenSearchRepository, OpenSearchRepository>();
-builder.Services.AddSingleton<ISearchService, SearchService>();
 builder.Services.AddSingleton<IOrganisationCache, OrganisationCache>();
 builder.Services.AddScoped<IDatabaseRepository, DatabaseRepository>();
 builder.Services.AddScoped<IDatabaseCommands, DatabaseCommands>();

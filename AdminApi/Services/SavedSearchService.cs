@@ -41,7 +41,7 @@ public class SavedSearchService(IDatabaseRepository db, IOpenSearchRepository os
         DateTime now = DateTime.UtcNow;
 
         (DateTime? fromUtc, DateTime? toUtc) range = variant switch {
-            SavedSearchCountVariant.Current => (new DateTime(now.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc), now),
+            SavedSearchCountVariant.Current => (null, null),
             SavedSearchCountVariant.PastOneYear => (now.AddYears(-1), now),
             SavedSearchCountVariant.PastFiveYears => (now.AddYears(-5), now),
             _ => (null, null)
@@ -50,16 +50,12 @@ public class SavedSearchService(IDatabaseRepository db, IOpenSearchRepository os
         SearchSpec spec = saved.Spec with {
             PublishedFromUtc = range.fromUtc,
             PublishedToUtc = range.toUtc,
-            ClosingOnOrAfterUtc = ShouldExcludeCurrentlyClosed(saved, variant) ? now.Date : null
+            ClosingOnOrAfterUtc = ShouldExcludeCurrentlyClosed(variant) ? now.Date : null
         };
 
         return os.CountAsync(spec, ct);
     }
 
-    private static bool ShouldExcludeCurrentlyClosed(SavedSearch saved, SavedSearchCountVariant variant)
-    {
-        if (variant != SavedSearchCountVariant.Current) return false;
-        if (saved.Spec.Types is null) return false;
-        return saved.Spec.Types.Contains(NoticeType.Pin);
-    }
+    private static bool ShouldExcludeCurrentlyClosed(SavedSearchCountVariant variant)
+        => variant == SavedSearchCountVariant.Current;
 }

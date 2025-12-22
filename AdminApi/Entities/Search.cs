@@ -8,9 +8,9 @@ public enum IndexKind
 
 public enum NoticeType
 {
-    Pin = 1,
-    Tender = 2,
-    Award = 3
+    Tender = 1,
+    Award = 2,
+    Pin = 3,
 }
 
 public enum SearchField
@@ -24,7 +24,7 @@ public enum SearchField
     Location = 7
 }
 
-public enum SearchFieldSet
+public enum QueryFieldSet
 {
     Default = 1
 }
@@ -43,9 +43,9 @@ public enum ResultOrder
 
 public record SearchSpec(
     IndexKind Index,
-    string? Term,
-    SearchFieldSet? TermFieldSet,
-    IReadOnlyList<SearchField>? TermFields,
+    string? Query,
+    QueryFieldSet? QueryFieldSet,
+    IReadOnlyList<SearchField>? QueryFields,
     IReadOnlyList<NoticeType>? Types,
     IReadOnlyList<string>? Regions,
     DateTime? PublishedFromUtc,
